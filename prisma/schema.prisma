@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+
+  customers Customer[]
+  products  Product[]
+  invoices  Invoice[]
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String
+  notes     String?
+  userId    String
+  createdAt DateTime @default(now())
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoices Invoice[]
+
+  @@unique([phone, userId])
+  @@index([userId])
+  @@index([phone])
+}
+
+model Product {
+  id           String   @id @default(cuid())
+  name         String
+  defaultPrice Float    @default(0)
+  description  String?
+  userId       String
+  createdAt    DateTime @default(now())
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoiceItems InvoiceItem[]
+
+  @@unique([name, userId])
+  @@index([userId])
+}
+
+model Invoice {
+  id             String   @id @default(cuid())
+  invoiceNumber  String
+  customerId     String
+  userId         String
+  invoiceDate    DateTime @default(now())
+  transportAmount Float   @default(0)
+  taxAmount      Float    @default(0)
+  totalAmount    Float    @default(0)
+  amountReceived Float    @default(0)
+  pendingAmount  Float    @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  customer Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items    InvoiceItem[]
+
+  @@unique([invoiceNumber, userId])
+  @@index([customerId])
+  @@index([userId])
+  @@index([invoiceDate])
+}
+
+model InvoiceItem {
+  id          String @id @default(cuid())
+  invoiceId   String
+  productId   String
+  productName String
+  quantity    Float
+  price       Float
+  subtotal    Float
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([invoiceId])
+  @@index([productId])
+}
