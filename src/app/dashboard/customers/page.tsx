@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  getCustomers,
+  getCustomersWithBalance,
   createCustomer,
   updateCustomer,
   deleteCustomer,
@@ -24,7 +24,7 @@ type Customer = {
   name: string;
   phone: string;
   notes: string | null;
-  invoices: { pendingAmount: number }[];
+  pendingBalance: number;
 };
 
 export default function CustomersPage() {
@@ -47,7 +47,7 @@ export default function CustomersPage() {
 
   const loadCustomers = useCallback(async () => {
     try {
-      const data = await getCustomers();
+      const data = await getCustomersWithBalance();
       setCustomers(data as Customer[]);
     } catch {
       console.error("Failed to load customers");
@@ -121,9 +121,6 @@ export default function CustomersPage() {
     }
   };
 
-  const getTotalPending = (customer: Customer) =>
-    customer.invoices.reduce((sum, inv) => sum + inv.pendingAmount, 0);
-
   return (
     <div>
       <div className="page-header">
@@ -194,7 +191,6 @@ export default function CustomersPage() {
             </thead>
             <tbody>
               {filteredCustomers.map((customer) => {
-                const pending = getTotalPending(customer);
                 return (
                   <tr key={customer.id}>
                     <td>
@@ -226,10 +222,10 @@ export default function CustomersPage() {
                     <td>
                       <span
                         className={`badge ${
-                          pending > 0 ? "badge-danger" : "badge-success"
+                          customer.pendingBalance > 0 ? "badge-danger" : "badge-success"
                         }`}
                       >
-                        {formatCurrency(pending)}
+                        {formatCurrency(customer.pendingBalance)}
                       </span>
                     </td>
                     <td>

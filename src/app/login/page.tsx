@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Gem } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -63,9 +62,19 @@ export default function LoginPage() {
       />
 
       <div className="login-card">
-        <div className="login-logo">
-          <Gem size={28} />
-        </div>
+        <img 
+          src="/logo.png" 
+          alt="Ajuha Jewellers" 
+          style={{ 
+            width: 72, 
+            height: 72, 
+            borderRadius: "var(--radius-lg)", 
+            objectFit: "contain", 
+            margin: "0 auto 1.5rem",
+            background: "white",
+            padding: 8
+          }} 
+        />
         <h1 className="login-title">Ajuha Jewellers</h1>
         <p className="login-subtitle">Sign in to your billing dashboard</p>
 

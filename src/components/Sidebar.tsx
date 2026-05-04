@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { useTheme } from "@/components/ThemeProvider";
 import {
   LayoutDashboard,
   Users,
@@ -10,7 +11,8 @@ import {
   FileText,
   Plus,
   LogOut,
-  Gem,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 const navItems = [
@@ -38,6 +40,7 @@ const navItems = [
 
 export default function Sidebar({ userName, isOpen, onClose }: { userName: string; isOpen?: boolean; onClose?: () => void }) {
   const pathname = usePathname();
+  const { theme, toggleTheme } = useTheme();
 
   const handleNavClick = () => {
     if (onClose) onClose();
@@ -46,9 +49,18 @@ export default function Sidebar({ userName, isOpen, onClose }: { userName: strin
   return (
     <aside className={`sidebar ${isOpen ? "open" : ""}`}>
       <div className="sidebar-header">
-        <div className="sidebar-logo">
-          <Gem size={20} />
-        </div>
+        <img 
+          src="/logo.png" 
+          alt="Ajuha Jewellers" 
+          style={{ 
+            width: 36, 
+            height: 36, 
+            borderRadius: "var(--radius-md)",
+            objectFit: "contain",
+            background: "white",
+            padding: 4
+          }} 
+        />
         <div>
           <div className="sidebar-brand">Ajuha Jewellers</div>
           <div className="sidebar-brand-sub">Billing System</div>
@@ -96,13 +108,22 @@ export default function Sidebar({ userName, isOpen, onClose }: { userName: strin
               Admin
             </div>
           </div>
-          <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            className="btn btn-ghost btn-icon"
-            title="Sign out"
-          >
-            <LogOut size={18} />
-          </button>
+          <div style={{ display: "flex", gap: "0.25rem" }}>
+            <button
+              onClick={toggleTheme}
+              className="btn btn-ghost btn-icon"
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="btn btn-ghost btn-icon"
+              title="Sign out"
+            >
+              <LogOut size={18} />
+            </button>
+          </div>
         </div>
       </div>
     </aside>

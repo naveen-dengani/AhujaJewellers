@@ -19,7 +19,8 @@ model User {
 
   customers Customer[]
   products  Product[]
-  invoices  Invoice[]
+  invoices Invoice[]
+  payments Payment[]
 }
 
 model Customer {
@@ -32,6 +33,7 @@ model Customer {
 
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   invoices Invoice[]
+  payments Payment[]
 
   @@unique([phone, userId])
   @@index([userId])
@@ -70,6 +72,7 @@ model Invoice {
   customer Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
   user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   items    InvoiceItem[]
+  payments Payment[]
 
   @@unique([invoiceNumber, userId])
   @@index([customerId])
@@ -91,4 +94,25 @@ model InvoiceItem {
 
   @@index([invoiceId])
   @@index([productId])
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  invoiceId   String?
+  customerId  String
+  userId      String
+  amount      Float
+  paymentDate DateTime @default(now())
+  paymentMode String
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  invoice  Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  customer Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([customerId])
+  @@index([userId])
+  @@index([paymentDate])
 }

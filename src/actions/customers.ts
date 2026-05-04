@@ -29,6 +29,43 @@ export async function getCustomers() {
   });
 }
 
+export async function getCustomersWithBalance() {
+  const userId = await getUserId();
+
+  const customers = await prisma.customer.findMany({
+    where: { userId },
+    include: {
+      invoices: {
+        select: {
+          totalAmount: true,
+          amountReceived: true,
+        },
+      },
+      payments: {
+        where: { invoiceId: null },
+        select: { amount: true },
+      },
+    },
+    orderBy: { name: "asc" },
+  });
+
+  return customers.map((customer) => {
+    const totalBilled = customer.invoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
+    const totalReceivedFromInvoices = customer.invoices.reduce((sum, inv) => sum + inv.amountReceived, 0);
+    const totalFromUnlinkedPayments = customer.payments.reduce((sum, p) => sum + p.amount, 0);
+    const totalReceived = totalReceivedFromInvoices + totalFromUnlinkedPayments;
+    const pendingBalance = totalBilled - totalReceived;
+
+    return {
+      id: customer.id,
+      name: customer.name,
+      phone: customer.phone,
+      notes: customer.notes,
+      pendingBalance: Math.max(0, pendingBalance),
+    };
+  });
+}
+
 export async function getCustomer(id: string) {
   const userId = await getUserId();
   return prisma.customer.findFirst({
@@ -85,6 +122,7 @@ export async function deleteCustomer(id: string) {
 
 export async function getCustomerBalance(customerId: string) {
   const userId = await getUserId();
+
   const invoices = await prisma.invoice.findMany({
     where: { customerId, userId },
     select: {
@@ -99,10 +137,26 @@ export async function getCustomerBalance(customerId: string) {
   });
 
   const totalBilled = invoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
-  const totalReceived = invoices.reduce(
+  const totalReceivedFromInvoices = invoices.reduce(
     (sum, inv) => sum + inv.amountReceived,
     0
   );
+
+  const paymentsWithoutInvoice = await prisma.payment.findMany({
+    where: {
+      customerId,
+      userId,
+      invoiceId: null,
+    },
+    select: { amount: true },
+  });
+
+  const totalFromUnlinkedPayments = paymentsWithoutInvoice.reduce(
+    (sum, p) => sum + p.amount,
+    0
+  );
+
+  const totalReceived = totalReceivedFromInvoices + totalFromUnlinkedPayments;
   const totalPending = totalBilled - totalReceived;
 
   return { totalBilled, totalReceived, totalPending, invoices };

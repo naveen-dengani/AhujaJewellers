@@ -6,8 +6,18 @@ import {
   View,
   StyleSheet,
   pdf,
+  Image,
 } from "@react-pdf/renderer";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { LOGO_BASE64 } from "./logo";
+
+const SHOP_NAME = "AJUHA JEWELLERS";
+const SHOP_OWNER = "Mayank Dengani";
+const SHOP_PHONE = "9165795141";
+const SHOP_ADDRESS_LINE1 = "Shalimar Market, Station Road";
+const SHOP_ADDRESS_LINE2 = "Katni, M.P. 483501";
+
+const COLOR_BROWN = "#4a3728";
 
 const styles = StyleSheet.create({
   page: {
@@ -18,18 +28,28 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#d4af37",
-    paddingBottom: 10,
+    borderBottomColor: COLOR_BROWN,
+    paddingBottom: 15,
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
-    color: "#d4af37",
+    color: COLOR_BROWN,
   },
-  subtitle: {
+  owner: {
     fontSize: 10,
-    color: "#666",
-    marginTop: 4,
+    color: "#555",
+    marginTop: 3,
+  },
+  phone: {
+    fontSize: 10,
+    color: "#555",
+    marginTop: 2,
+  },
+  addressLine: {
+    fontSize: 9,
+    color: "#555",
+    marginBottom: 2,
   },
   row: {
     flexDirection: "row",
@@ -134,8 +154,14 @@ export function InvoicePDF({ invoice }: InvoicePDFProps) {
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          <Text style={styles.title}>AJUHA JEWELLERS</Text>
-          <Text style={styles.subtitle}>Invoice #{invoice.invoiceNumber}</Text>
+          <Text style={styles.title}>{SHOP_NAME}</Text>
+          <Text style={styles.owner}>{SHOP_OWNER}</Text>
+          <Text style={styles.phone}>{SHOP_PHONE}</Text>
+          <Text style={styles.addressLine}>{SHOP_ADDRESS_LINE1}</Text>
+          <Text style={styles.addressLine}>{SHOP_ADDRESS_LINE2}</Text>
+          <Text style={{ fontSize: 10, color: COLOR_BROWN, marginTop: 8 }}>
+            Invoice #{invoice.invoiceNumber}
+          </Text>
         </View>
 
         <View style={styles.row}>
@@ -240,8 +266,14 @@ export function BalancePDF({ customer, balance }: BalancePDFProps) {
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          <Text style={styles.title}>AJUHA JEWELLERS</Text>
-          <Text style={styles.subtitle}>Account Statement</Text>
+          <Text style={styles.title}>{SHOP_NAME}</Text>
+          <Text style={styles.owner}>{SHOP_OWNER}</Text>
+          <Text style={styles.phone}>{SHOP_PHONE}</Text>
+          <Text style={styles.addressLine}>{SHOP_ADDRESS_LINE1}</Text>
+          <Text style={styles.addressLine}>{SHOP_ADDRESS_LINE2}</Text>
+          <Text style={{ fontSize: 10, color: COLOR_BROWN, marginTop: 8 }}>
+            Account Statement
+          </Text>
         </View>
 
         <View style={styles.row}>

@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useState } from "react";
-import { Menu, X, Gem } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
@@ -48,9 +48,18 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           <button className="mobile-menu-btn" onClick={toggleSidebar}>
             {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
-          <div className="mobile-logo">
-            <Gem size={18} />
-          </div>
+          <img 
+            src="/logo.png" 
+            alt="Ajuha Jewellers" 
+            style={{ 
+              width: 32, 
+              height: 32, 
+              borderRadius: "var(--radius-md)",
+              objectFit: "contain",
+              background: "white",
+              padding: 2
+            }} 
+          />
           <span className="mobile-brand">Ajuha Jewellers</span>
         </div>
       </div>
