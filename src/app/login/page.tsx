@@ -167,7 +167,7 @@ export default function LoginPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <div className="input-group">
             <label className="input-label" htmlFor="email">Email</label>
-            <input id="email" type="email" className="input" placeholder="naveen.dengani@gmail.com" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
+            <input id="email" type="email" className="input" placeholder="email id" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
           </div>
 
           <button type="button" className="btn btn-primary btn-lg" onClick={handlePasskeyLogin} disabled={loading} style={{ width: "100%" }}>
@@ -180,7 +180,7 @@ export default function LoginPage() {
         </div>
 
         <p style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "1.5rem" }}>
-          Authorized: naveen.dengani@gmail.com, mayank.dengani25@gmail.com
+          
         </p>
       </div>
     </div>
