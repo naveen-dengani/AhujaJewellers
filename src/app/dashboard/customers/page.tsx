@@ -7,7 +7,7 @@ import {
   updateCustomer,
   deleteCustomer,
 } from "@/actions/customers";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 import {
   Plus,
   Search,
@@ -16,15 +16,19 @@ import {
   X,
   Users,
   AlertTriangle,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import Link from "next/link";
 
 type Customer = {
   id: string;
   name: string;
-  phone: string;
+  phone: string | null;
   notes: string | null;
   pendingBalance: number;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export default function CustomersPage() {
@@ -44,6 +48,8 @@ export default function CustomersPage() {
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
   const [formError, setFormError] = useState("");
+  const [sortBy, setSortBy] = useState<"name" | "createdAt" | "updatedAt">("name");
+  const [sortDesc, setSortDesc] = useState(true);
 
   const loadCustomers = useCallback(async () => {
     try {
@@ -63,8 +69,22 @@ export default function CustomersPage() {
   const filteredCustomers = customers.filter(
     (c) =>
       c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.phone.includes(search)
-  );
+      (c.phone && c.phone.includes(search))
+  ).sort((a, b) => {
+    let comparison = 0;
+    if (sortBy === "name") {
+      comparison = a.name.localeCompare(b.name);
+    } else if (sortBy === "createdAt") {
+      const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      comparison = aDate - bDate;
+    } else if (sortBy === "updatedAt") {
+      const aDate = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+      const bDate = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+      comparison = aDate - bDate;
+    }
+    return sortDesc ? -comparison : comparison;
+  });
 
   const openCreateModal = () => {
     setEditingCustomer(null);
@@ -78,7 +98,7 @@ export default function CustomersPage() {
   const openEditModal = (customer: Customer) => {
     setEditingCustomer(customer);
     setName(customer.name);
-    setPhone(customer.phone);
+    setPhone(customer.phone || "");
     setNotes(customer.notes || "");
     setFormError("");
     setShowModal(true);
@@ -147,6 +167,8 @@ export default function CustomersPage() {
         />
       </div>
 
+      
+
       {/* Table */}
       {loading ? (
         <div className="card" style={{ textAlign: "center", padding: "3rem" }}>
@@ -182,10 +204,60 @@ export default function CustomersPage() {
           <table>
             <thead>
               <tr>
-                <th>Name</th>
+                <th>
+                  Name
+                  <button
+                    className="sort-icon-btn"
+                    onClick={() => {
+                      if (sortBy === "name") {
+                        setSortDesc(!sortDesc);
+                      } else {
+                        setSortBy("name");
+                        setSortDesc(true);
+                      }
+                    }}
+                    title="Sort by name"
+                  >
+                    {sortBy === "name" ? (sortDesc ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowDown size={14} />}
+                  </button>
+                </th>
                 <th>Phone</th>
                 <th>Notes</th>
                 <th>Pending Amount</th>
+                <th>
+                  Created
+                  <button
+                    className="sort-icon-btn"
+                    onClick={() => {
+                      if (sortBy === "createdAt") {
+                        setSortDesc(!sortDesc);
+                      } else {
+                        setSortBy("createdAt");
+                        setSortDesc(true);
+                      }
+                    }}
+                    title="Sort by created date"
+                  >
+                    {sortBy === "createdAt" ? (sortDesc ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowDown size={14} />}
+                  </button>
+                </th>
+                <th>
+                  Modified
+                  <button
+                    className="sort-icon-btn"
+                    onClick={() => {
+                      if (sortBy === "updatedAt") {
+                        setSortDesc(!sortDesc);
+                      } else {
+                        setSortBy("updatedAt");
+                        setSortDesc(true);
+                      }
+                    }}
+                    title="Sort by modified date"
+                  >
+                    {sortBy === "updatedAt" ? (sortDesc ? <ArrowUp size={14} /> : <ArrowDown size={14} />) : <ArrowDown size={14} />}
+                  </button>
+                </th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -227,6 +299,12 @@ export default function CustomersPage() {
                       >
                         {formatCurrency(customer.pendingBalance)}
                       </span>
+                    </td>
+                    <td style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>
+                      {customer.createdAt ? formatDate(new Date(customer.createdAt)) : "—"}
+                    </td>
+                    <td style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>
+                      {customer.updatedAt ? formatDate(new Date(customer.updatedAt)) : "—"}
                     </td>
                     <td>
                       <div style={{ display: "flex", gap: "0.25rem" }}>
@@ -318,15 +396,14 @@ export default function CustomersPage() {
 
                 <div className="input-group">
                   <label className="input-label" htmlFor="customer-phone">
-                    Phone *
+                    Phone
                   </label>
                   <input
                     id="customer-phone"
                     className="input"
-                    placeholder="10-digit phone number"
+                    placeholder="Phone number (optional)"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    required
                   />
                 </div>
 

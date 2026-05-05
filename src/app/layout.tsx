@@ -1,17 +1,17 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { SessionProvider } from "next-auth/react";
+import ClientProvider from "@/components/ClientProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
-  title: "Ajuha Jewellers - Billing & Accounting",
+  title: "Ahuja Jewellers - Billing & Accounting",
   description:
-    "Professional billing and accounting system for Ajuha Jewellers. Manage customers, products, invoices, and payments.",
+    "Professional billing and accounting system for Ahuja Jewellers. Manage customers, products, invoices, and payments.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Ajuha Jewellers",
+    title: "Ahuja Jewellers",
   },
   icons: {
     icon: [
@@ -53,18 +53,16 @@ export default function RootLayout({
                 if (theme) {
                   document.documentElement.setAttribute('data-theme', theme);
                 }
-                if ('serviceWorker' in navigator) {
-                  navigator.serviceWorker.register('/sw.js');
-                }
+                // Service worker disabled for testing
               })();
             `,
           }}
         />
       </head>
       <body>
-        <SessionProvider>
+        <ClientProvider>
           <ThemeProvider>{children}</ThemeProvider>
-        </SessionProvider>
+        </ClientProvider>
       </body>
     </html>
   );

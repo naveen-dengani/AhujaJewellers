@@ -57,7 +57,7 @@ export default function InvoiceDetailClient({ invoice }: InvoiceDetailClientProp
     setBaseUrl(window.location.origin);
   }, []);
 
-  const whatsappLink = baseUrl ? getWhatsAppLink(
+  const whatsappLink = baseUrl && invoice.customer.phone ? getWhatsAppLink(
     invoice.customer.phone,
     getInvoiceWhatsAppMessage(
       invoice.customer.name,
@@ -280,7 +280,7 @@ export default function InvoiceDetailClient({ invoice }: InvoiceDetailClientProp
                   <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
                     Phone
                   </div>
-                  <div style={{ fontWeight: 500 }}>{invoice.customer.phone}</div>
+                  <div style={{ fontWeight: 500 }}>{invoice.customer.phone || "—"}</div>
                 </div>
               </div>
             </div>
@@ -297,6 +297,7 @@ export default function InvoiceDetailClient({ invoice }: InvoiceDetailClientProp
               <thead>
                 <tr>
                   <th>Product</th>
+                  <th>Unit</th>
                   <th>Qty</th>
                   <th>Price</th>
                   <th>Subtotal</th>
@@ -306,6 +307,7 @@ export default function InvoiceDetailClient({ invoice }: InvoiceDetailClientProp
                 {invoice.items.map((item) => (
                   <tr key={item.id}>
                     <td style={{ fontWeight: 500 }}>{item.productName}</td>
+                    <td>{item.unit && item.unit.trim() && item.unit !== "OTHER" ? item.unit : "-"}</td>
                     <td>{item.quantity}</td>
                     <td>{formatCurrency(item.price)}</td>
                     <td style={{ fontWeight: 500 }}>

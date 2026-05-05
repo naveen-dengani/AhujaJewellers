@@ -1,7 +1,7 @@
 {
-  "name": "Ajuha Jewellers",
-  "short_name": "Ajuha Jewellers",
-  "description": "Professional billing and accounting system for Ajuha Jewellers",
+  "name": "Ahuja Jewellers",
+  "short_name": "Ahuja Jewellers",
+  "description": "Professional billing and accounting system for Ahuja Jewellers",
   "start_url": "/login",
   "display": "standalone",
   "background_color": "#0f0f12",

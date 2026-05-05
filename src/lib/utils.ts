@@ -7,8 +7,6 @@ export function cn(...inputs: ClassValue[]) {
 
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
     maximumFractionDigits: 2,
   }).format(amount);
 }
@@ -65,7 +63,7 @@ export function getInvoiceWhatsAppMessage(
 ${pdfLink ? `📎 PDF: ${pdfLink}` : ""}
 
 Thank you for your business!
-- Ajuha Jewellers`;
+- Ahuja Jewellers`;
 }
 
 export function getBalanceWhatsAppMessage(
@@ -85,7 +83,7 @@ export function getBalanceWhatsAppMessage(
 ${pdfLink ? `📎 Statement PDF: ${pdfLink}` : ""}
 
 Thank you!
-- Ajuha Jewellers`;
+- Ahuja Jewellers`;
 }
 
 function levenshteinDistance(a: string, b: string): number {

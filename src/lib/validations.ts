@@ -7,12 +7,13 @@ export const loginSchema = z.object({
 
 export const customerSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  phone: z.string().min(10, "Phone number must be at least 10 digits"),
+  phone: z.string().optional(),
   notes: z.string().optional(),
 });
 
 export const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
+  unit: z.string().optional(),
   defaultPrice: z.number().min(0, "Price must be positive"),
   description: z.string().optional(),
 });
@@ -20,6 +21,7 @@ export const productSchema = z.object({
 export const invoiceItemSchema = z.object({
   productId: z.string().optional(),
   productName: z.string().min(1, "Product name is required"),
+  unit: z.string().nullable(),
   quantity: z.number().min(0.01, "Quantity must be greater than 0"),
   price: z.number().min(0, "Price must be positive"),
   isNew: z.boolean().optional(),

@@ -22,12 +22,15 @@ import {
 import Link from "next/link";
 
 type Customer = { id: string; name: string; phone: string };
-type Product = { id: string; name: string; defaultPrice: number };
+type Product = { id: string; name: string; unit: string | null; defaultPrice: number };
+
+const PREDEFINED_UNITS = ["piece", "line", "dozen", "kg"];
 
 type InvoiceItem = {
   id: string;
   productId: string;
   productName: string;
+  unit: string;
   quantity: number;
   price: number;
   isNew: boolean;
@@ -67,7 +70,20 @@ export default function EditInvoicePage({
   const [suggestions, setSuggestions] = useState<
     Record<string, PriceSuggestion>
   >({});
+  const [focusedItemId, setFocusedItemId] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (focusedItemId) {
+      setTimeout(() => {
+        const input = document.querySelector(`[data-item-id="${focusedItemId}"]`) as HTMLInputElement;
+        if (input) {
+          input.focus();
+        }
+        setFocusedItemId(null);
+      }, 0);
+    }
+  }, [focusedItemId]);
 
   const loadData = useCallback(async () => {
     try {
@@ -98,6 +114,7 @@ export default function EditInvoicePage({
           id: item.id,
           productId: item.productId,
           productName: item.productName,
+          unit: item.unit || "",
           quantity: item.quantity,
           price: item.price,
           isNew: false,
@@ -166,6 +183,7 @@ export default function EditInvoicePage({
     updateItem(itemId, {
       productId: product.id,
       productName: product.name,
+      unit: product.unit || "",
       price: product.defaultPrice,
       isNew: false,
     });
@@ -178,6 +196,7 @@ export default function EditInvoicePage({
     updateItem(itemId, {
       productId: "",
       productName: name,
+      unit: "",
       price: 0,
       isNew: true,
     });
@@ -186,17 +205,20 @@ export default function EditInvoicePage({
   };
 
   const addItem = () => {
+    const newId = crypto.randomUUID();
     setItems((prev) => [
       ...prev,
       {
-        id: crypto.randomUUID(),
+        id: newId,
         productId: "",
         productName: "",
+        unit: "",
         quantity: 1,
         price: 0,
         isNew: false,
       },
     ]);
+    setFocusedItemId(newId);
   };
 
   const removeItem = (itemId: string) => {
@@ -237,6 +259,7 @@ export default function EditInvoicePage({
         items: validItems.map((item) => ({
           productId: item.productId || undefined,
           productName: item.productName,
+          unit: item.unit && item.unit !== "OTHER" ? item.unit : undefined,
           quantity: item.quantity,
           price: item.price,
           isNew: item.isNew,
@@ -322,7 +345,7 @@ export default function EditInvoicePage({
                     <option value="">Select a customer...</option>
                     {customers.map((c) => (
                       <option key={c.id} value={c.id}>
-                        {c.name} ({c.phone})
+                        {c.name} {c.phone ? `(${c.phone})` : ""}
                       </option>
                     ))}
                   </select>
@@ -341,18 +364,14 @@ export default function EditInvoicePage({
 
             {/* Items */}
             <div className="card">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-                <h3 style={{ fontSize: "0.9375rem", fontWeight: 600 }}>Items</h3>
-                <button type="button" className="btn btn-secondary btn-sm" onClick={addItem}>
-                  <Plus size={14} /> Add Item
-                </button>
-              </div>
+              <h3 style={{ fontSize: "0.9375rem", fontWeight: 600, marginBottom: "1rem" }}>Items</h3>
 
-              <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr auto", gap: "0.75rem", padding: "0 0 0.5rem", borderBottom: "1px solid var(--border)", marginBottom: "0.5rem" }}>
-                <span className="input-label">Product</span>
-                <span className="input-label">Qty</span>
-                <span className="input-label">Price (₹)</span>
-                <span className="input-label">Subtotal</span>
+              <div style={{ display: "grid", gridTemplateColumns: "2fr 100px 70px 100px 100px 40px", gap: "0.75rem", padding: "0 0 0.5rem", borderBottom: "1px solid var(--border)", marginBottom: "0.5rem", alignItems: "end" }}>
+                <span className="input-label" style={{ marginBottom: "0.25rem" }}>Product</span>
+                <span className="input-label" style={{ marginBottom: "0.25rem" }}>Unit</span>
+                <span className="input-label" style={{ marginBottom: "0.25rem" }}>Qty</span>
+                <span className="input-label" style={{ marginBottom: "0.25rem" }}>Price (₹)</span>
+                <span className="input-label" style={{ marginBottom: "0.25rem" }}>Subtotal</span>
                 <span></span>
               </div>
 
@@ -363,6 +382,7 @@ export default function EditInvoicePage({
                       <input
                         className="input"
                         placeholder="Search or add product..."
+                        data-item-id={item.id}
                         value={activeItemSearch === item.id ? productSearch : item.productName}
                         onChange={(e) => { setProductSearch(e.target.value); setActiveItemSearch(item.id); }}
                         onFocus={() => { setActiveItemSearch(item.id); setProductSearch(item.productName); }}
@@ -391,6 +411,45 @@ export default function EditInvoicePage({
                         </div>
                       )}
                     </div>
+                    <div style={{ display: "flex", gap: "0.25rem", width: "100%" }}>
+                      <select
+                        className="input"
+                        value={
+                          item.unit && !PREDEFINED_UNITS.includes(item.unit)
+                            ? "custom"
+                            : item.unit
+                        }
+                        onChange={(e) => {
+                          if (e.target.value === "custom") {
+                            updateItem(item.id, { unit: "OTHER" });
+                          } else {
+                            updateItem(item.id, { unit: e.target.value });
+                          }
+                        }}
+                        style={{ 
+                          padding: "0.375rem",
+                          width: "100%",
+                          minWidth: "70px",
+                        }}
+                      >
+                        <option value="">-</option>
+                        {PREDEFINED_UNITS.map((u) => (
+                          <option key={u} value={u}>{u}</option>
+                        ))}
+                        <option value="custom">Other</option>
+                      </select>
+                      {(item.unit === "OTHER" || (item.unit && !PREDEFINED_UNITS.includes(item.unit))) && (
+                        <input
+                          className="input"
+                          value={item.unit === "OTHER" ? "" : item.unit}
+                          onChange={(e) =>
+                            updateItem(item.id, { unit: e.target.value })
+                          }
+                          placeholder="Unit"
+                          style={{ padding: "0.375rem", minWidth: "60px" }}
+                        />
+                      )}
+                    </div>
                     <input type="number" className="input" value={item.quantity} onChange={(e) => updateItem(item.id, { quantity: parseFloat(e.target.value) || 0 })} min="0.01" step="0.01" />
                     <input type="number" className="input" value={item.price} onChange={(e) => updateItem(item.id, { price: parseFloat(e.target.value) || 0 })} min="0" step="0.01" />
                     <div style={{ display: "flex", alignItems: "center", fontWeight: 500, fontSize: "0.875rem" }}>{formatCurrency(item.quantity * item.price)}</div>
@@ -407,6 +466,10 @@ export default function EditInvoicePage({
                   )}
                 </div>
               ))}
+
+              <button type="button" className="btn btn-secondary btn-sm" onClick={addItem} style={{ marginTop: "0.75rem" }}>
+                <Plus size={14} /> Add Item
+              </button>
             </div>
 
             {/* Amounts */}

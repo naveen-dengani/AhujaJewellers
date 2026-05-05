@@ -24,6 +24,9 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   }
 
   if (!session) {
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
     return null;
   }
 
@@ -50,7 +53,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           </button>
           <img 
             src="/logo.png" 
-            alt="Ajuha Jewellers" 
+            alt="Ahuja Jewellers" 
             style={{ 
               width: 32, 
               height: 32, 
@@ -60,7 +63,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               padding: 2
             }} 
           />
-          <span className="mobile-brand">Ajuha Jewellers</span>
+          <span className="mobile-brand">Ahuja Jewellers</span>
         </div>
       </div>
 

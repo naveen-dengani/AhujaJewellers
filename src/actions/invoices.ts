@@ -131,6 +131,7 @@ export async function createInvoice(data: InvoiceInput) {
           invoiceId: invoice.id,
           productId: productId!,
           productName: item.productName,
+          unit: item.unit,
           quantity: item.quantity,
           price: item.price,
           subtotal: item.quantity * item.price,
@@ -211,6 +212,7 @@ export async function updateInvoice(id: string, data: InvoiceInput) {
           invoiceId: invoice.id,
           productId: productId!,
           productName: item.productName,
+          unit: item.unit,
           quantity: item.quantity,
           price: item.price,
           subtotal: item.quantity * item.price,
@@ -277,7 +279,7 @@ export async function downloadInvoicePDF(id: string) {
     where: { id, userId },
     include: {
       customer: { select: { name: true, phone: true } },
-      items: { select: { productName: true, quantity: true, price: true, subtotal: true } },
+      items: { select: { productName: true, unit: true, quantity: true, price: true, subtotal: true } },
     },
   });
   

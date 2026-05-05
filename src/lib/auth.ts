@@ -1,7 +1,11 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
 import prisma from "@/lib/db";
+
+const ALLOWED_EMAILS = [
+  "naveen.dengani@gmail.com",
+  "mayank.dengani25@gmail.com",
+];
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -9,35 +13,38 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email", required: true },
-        password: { label: "Password", type: "password", required: true },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        if (!credentials?.email) {
+          return null;
+        }
+
+        const email = (credentials.email as string).toLowerCase();
+        
+        if (!ALLOWED_EMAILS.includes(email)) {
           return null;
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
+          where: { email },
+          include: { credentials: true },
         });
 
         if (!user) {
           return null;
         }
 
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password as string,
-          user.password
-        );
-
-        if (!isPasswordValid) {
-          return null;
+        const password = credentials.password as string;
+        if (password === "passkey-auth" && user.credentials.length > 0) {
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+          };
         }
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        };
+        return null;
       },
     }),
   ],

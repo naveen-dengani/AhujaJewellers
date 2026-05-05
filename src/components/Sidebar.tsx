@@ -51,7 +51,7 @@ export default function Sidebar({ userName, isOpen, onClose }: { userName: strin
       <div className="sidebar-header">
         <img 
           src="/logo.png" 
-          alt="Ajuha Jewellers" 
+          alt="Ahuja Jewellers" 
           style={{ 
             width: 36, 
             height: 36, 
@@ -62,7 +62,7 @@ export default function Sidebar({ userName, isOpen, onClose }: { userName: strin
           }} 
         />
         <div>
-          <div className="sidebar-brand">Ajuha Jewellers</div>
+          <div className="sidebar-brand">Ahuja Jewellers</div>
           <div className="sidebar-brand-sub">Billing System</div>
         </div>
       </div>

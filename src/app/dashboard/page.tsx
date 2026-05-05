@@ -16,7 +16,7 @@ export default async function DashboardPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Dashboard</h1>
-          <p className="page-subtitle">Welcome back to Ajuha Jewellers</p>
+          <p className="page-subtitle">Welcome back to Ahuja Jewellers</p>
         </div>
         <Link href="/dashboard/invoices/new" className="btn btn-primary">
           <Plus size={18} />

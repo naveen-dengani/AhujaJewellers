@@ -22,6 +22,7 @@ import {
 type Product = {
   id: string;
   name: string;
+  unit: string | null;
   defaultPrice: number;
   description: string | null;
   createdAt: Date;
@@ -40,14 +41,19 @@ export default function ProductsPage() {
 
   // Form state
   const [name, setName] = useState("");
+  const [unit, setUnit] = useState("");
+  const [customUnit, setCustomUnit] = useState("");
   const [defaultPrice, setDefaultPrice] = useState("");
   const [description, setDescription] = useState("");
   const [formError, setFormError] = useState("");
+
+  const PREDEFINED_UNITS = ["piece", "line", "dozen", "kg"];
 
   // Similar products state
   const [similarProducts, setSimilarProducts] = useState<SimilarProduct[]>([]);
   const [pendingProductData, setPendingProductData] = useState<{
     name: string;
+    unit: string | undefined;
     defaultPrice: number | string;
     description: string | undefined;
   } | null>(null);
@@ -74,6 +80,8 @@ export default function ProductsPage() {
   const openCreateModal = () => {
     setEditingProduct(null);
     setName("");
+    setUnit("");
+    setCustomUnit("");
     setDefaultPrice("");
     setDescription("");
     setFormError("");
@@ -83,6 +91,9 @@ export default function ProductsPage() {
   const openEditModal = (product: Product) => {
     setEditingProduct(product);
     setName(product.name);
+    const isCustom = product.unit && !PREDEFINED_UNITS.includes(product.unit);
+    setUnit(isCustom ? "custom" : (product.unit || ""));
+    setCustomUnit(isCustom ? product.unit : "");
     setDefaultPrice(product.defaultPrice.toString());
     setDescription(product.description || "");
     setFormError("");
@@ -95,8 +106,10 @@ export default function ProductsPage() {
     setSaving(true);
 
     try {
+      const finalUnit = unit === "custom" ? customUnit : (unit || undefined);
       const data = {
         name,
+        unit: finalUnit,
         defaultPrice: parseFloat(defaultPrice) || 0,
         description: description || undefined,
       };
@@ -112,6 +125,7 @@ export default function ProductsPage() {
           setSimilarProducts(result.similarProducts);
           setPendingProductData({
             name: data.name,
+            unit: data.unit,
             defaultPrice: data.defaultPrice,
             description: data.description,
           });
@@ -134,7 +148,7 @@ export default function ProductsPage() {
     if (!pendingProductData) return;
     setSaving(true);
     try {
-      await createProduct(pendingProductData as { name: string; defaultPrice: number; description?: string });
+      await createProduct(pendingProductData as { name: string; unit?: string; defaultPrice: number; description?: string });
       setShowSimilarModal(false);
       setSimilarProducts([]);
       setPendingProductData(null);
@@ -154,6 +168,9 @@ export default function ProductsPage() {
     if (product) {
       setEditingProduct(product);
       setName(product.name);
+      const isCustom = product.unit && !PREDEFINED_UNITS.includes(product.unit);
+      setUnit(isCustom ? "custom" : (product.unit || ""));
+      setCustomUnit(isCustom ? product.unit : "");
       setDefaultPrice(product.defaultPrice.toString());
       setDescription(product.description || "");
       setShowSimilarModal(false);
@@ -239,6 +256,7 @@ export default function ProductsPage() {
             <thead>
               <tr>
                 <th>Product Name</th>
+                <th>Unit</th>
                 <th>Default Price</th>
                 <th>Description</th>
                 <th>Actions</th>
@@ -248,6 +266,7 @@ export default function ProductsPage() {
               {filteredProducts.map((product) => (
                 <tr key={product.id}>
                   <td style={{ fontWeight: 500 }}>{product.name}</td>
+                  <td>{product.unit || "—"}</td>
                   <td>
                     <span className="badge badge-gold">
                       {formatCurrency(product.defaultPrice)}
@@ -340,6 +359,40 @@ export default function ProductsPage() {
                     required
                     autoFocus
                   />
+                </div>
+
+                <div className="input-group">
+                  <label className="input-label" htmlFor="product-unit">
+                    Unit
+                  </label>
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <select
+                      id="product-unit"
+                      className="input"
+                      value={unit}
+                      onChange={(e) => {
+                        setUnit(e.target.value);
+                        if (e.target.value !== "custom") setCustomUnit("");
+                      }}
+                      style={{ flex: 1 }}
+                    >
+                      <option value="">Select unit</option>
+                      {PREDEFINED_UNITS.map((u) => (
+                        <option key={u} value={u}>{u}</option>
+                      ))}
+                      <option value="custom">Other (custom)</option>
+                    </select>
+                    {unit === "custom" && (
+                      <input
+                        className="input"
+                        placeholder="Enter unit"
+                        value={customUnit}
+                        onChange={(e) => setCustomUnit(e.target.value)}
+                        style={{ flex: 1 }}
+                        required
+                      />
+                    )}
+                  </div>
                 </div>
 
                 <div className="input-group">

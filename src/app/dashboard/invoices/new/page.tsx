@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { getCustomers } from "@/actions/customers";
+import { getCustomers, createCustomer } from "@/actions/customers";
 import { getProducts, checkSimilarProducts } from "@/actions/products";
 import { createInvoice, getLastPurchasePrice } from "@/actions/invoices";
 import { formatCurrency, formatDate, formatDateInput, type SimilarProduct } from "@/lib/utils";
@@ -20,12 +20,15 @@ import {
 import Link from "next/link";
 
 type Customer = { id: string; name: string; phone: string };
-type Product = { id: string; name: string; defaultPrice: number };
+type Product = { id: string; name: string; unit: string | null; defaultPrice: number };
+
+const PREDEFINED_UNITS = ["piece", "line", "dozen", "kg"];
 
 type InvoiceItem = {
   id: string;
   productId: string;
   productName: string;
+  unit: string;
   quantity: number;
   price: number;
   isNew: boolean;
@@ -50,6 +53,11 @@ export default function NewInvoicePage() {
   const [customerId, setCustomerId] = useState("");
   const [customerSearch, setCustomerSearch] = useState("");
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [showAddCustomer, setShowAddCustomer] = useState(false);
+  const [newCustomerName, setNewCustomerName] = useState("");
+  const [newCustomerPhone, setNewCustomerPhone] = useState("");
+  const [newCustomerNotes, setNewCustomerNotes] = useState("");
+  const [addingCustomer, setAddingCustomer] = useState(false);
   const [invoiceDate, setInvoiceDate] = useState(formatDateInput(new Date()));
   const [transportAmount, setTransportAmount] = useState("0");
   const [taxAmount, setTaxAmount] = useState("0");
@@ -59,6 +67,7 @@ export default function NewInvoicePage() {
       id: crypto.randomUUID(),
       productId: "",
       productName: "",
+      unit: "",
       quantity: 1,
       price: 0,
       isNew: false,
@@ -74,7 +83,21 @@ export default function NewInvoicePage() {
     productName: string;
     similar: SimilarProduct[];
   } | null>(null);
+  const [focusedItemId, setFocusedItemId] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const productInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (focusedItemId) {
+      setTimeout(() => {
+        const input = document.querySelector(`[data-item-id="${focusedItemId}"]`) as HTMLInputElement;
+        if (input) {
+          input.focus();
+        }
+        setFocusedItemId(null);
+      }, 0);
+    }
+  }, [focusedItemId]);
 
   const loadData = useCallback(async () => {
     try {
@@ -159,6 +182,7 @@ export default function NewInvoicePage() {
     updateItem(itemId, {
       productId: product.id,
       productName: product.name,
+      unit: product.unit || "",
       price: product.defaultPrice,
       isNew: false,
     });
@@ -182,6 +206,7 @@ export default function NewInvoicePage() {
     updateItem(itemId, {
       productId: "",
       productName: name,
+      unit: "",
       price: 0,
       isNew: true,
     });
@@ -216,17 +241,20 @@ export default function NewInvoicePage() {
   };
 
   const addItem = () => {
+    const newId = crypto.randomUUID();
     setItems((prev) => [
       ...prev,
       {
-        id: crypto.randomUUID(),
+        id: newId,
         productId: "",
         productName: "",
+        unit: "",
         quantity: 1,
         price: 0,
         isNew: false,
       },
     ]);
+    setFocusedItemId(newId);
   };
 
   const removeItem = (id: string) => {
@@ -251,7 +279,7 @@ export default function NewInvoicePage() {
     setError("");
 
     if (!customerId) {
-      setError("Please select a customer");
+      setError("Please select or add a customer");
       return;
     }
 
@@ -272,6 +300,7 @@ export default function NewInvoicePage() {
         items: validItems.map((item) => ({
           productId: item.productId || undefined,
           productName: item.productName,
+          unit: item.unit && item.unit !== "OTHER" ? item.unit : null,
           quantity: item.quantity,
           price: item.price,
           isNew: item.isNew,
@@ -344,7 +373,7 @@ export default function NewInvoicePage() {
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 <div className="input-group">
                   <label className="input-label" htmlFor="invoice-customer">
-                    Customer *
+                    Customer
                   </label>
                   <div className="customer-combobox" style={{ position: "relative" }}>
                     <input
@@ -360,7 +389,6 @@ export default function NewInvoicePage() {
                         setCustomerSearch(selectedCustomer?.name || "");
                         setShowCustomerDropdown(true);
                       }}
-                      required
                     />
                     {showCustomerDropdown && filteredCustomers.length > 0 && (
                       <div
@@ -379,7 +407,7 @@ export default function NewInvoicePage() {
                           >
                             <div style={{ fontWeight: 500 }}>{customer.name}</div>
                             <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                              {customer.phone}
+                              {customer.phone || "—"}
                             </div>
                           </div>
                         ))}
@@ -387,7 +415,16 @@ export default function NewInvoicePage() {
                     )}
                     {showCustomerDropdown && filteredCustomers.length === 0 && customerSearch && (
                       <div className="combobox-dropdown">
-                        <div className="combobox-empty">No customers found</div>
+                        <div
+                          className="combobox-option"
+                          onClick={() => {
+                            setShowAddCustomer(true);
+                            setShowCustomerDropdown(false);
+                          }}
+                          style={{ color: "var(--primary)", fontWeight: 500 }}
+                        >
+                          + Add New Customer
+                        </div>
                       </div>
                     )}
                   </div>
@@ -405,6 +442,95 @@ export default function NewInvoicePage() {
                     onChange={(e) => setInvoiceDate(e.target.value)}
                   />
                 </div>
+
+                {showAddCustomer && (
+                  <div className="card" style={{ backgroundColor: "var(--surface-raised)", marginTop: "0.5rem" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                      <h3 style={{ fontSize: "0.9375rem", fontWeight: 600 }}>
+                        Add New Customer
+                      </h3>
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-icon"
+                        onClick={() => setShowAddCustomer(false)}
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                      <div className="input-group">
+                        <label className="input-label" htmlFor="new-customer-name">
+                          Name *
+                        </label>
+                        <input
+                          id="new-customer-name"
+                          className="input"
+                          placeholder="Customer name"
+                          value={newCustomerName}
+                          onChange={(e) => setNewCustomerName(e.target.value)}
+                        />
+                      </div>
+                      <div className="input-group">
+                        <label className="input-label" htmlFor="new-customer-phone">
+                          Phone (optional)
+                        </label>
+                        <input
+                          id="new-customer-phone"
+                          className="input"
+                          placeholder="Phone number"
+                          value={newCustomerPhone}
+                          onChange={(e) => setNewCustomerPhone(e.target.value)}
+                        />
+                      </div>
+                      <div className="input-group">
+                        <label className="input-label" htmlFor="new-customer-notes">
+                          Notes (optional)
+                        </label>
+                        <textarea
+                          id="new-customer-notes"
+                          className="input"
+                          placeholder="Any notes..."
+                          value={newCustomerNotes}
+                          onChange={(e) => setNewCustomerNotes(e.target.value)}
+                          rows={2}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={async () => {
+                          if (!newCustomerName.trim()) {
+                            setError("Customer name is required");
+                            return;
+                          }
+                          setAddingCustomer(true);
+                          setError("");
+                          try {
+                            const newCustomer = await createCustomer({
+                              name: newCustomerName.trim(),
+                              phone: newCustomerPhone.trim() || undefined,
+                              notes: newCustomerNotes.trim() || undefined,
+                            });
+                            setCustomerId(newCustomer.id);
+                            setCustomerSearch(newCustomer.name);
+                            setCustomers((prev) => [...prev, { id: newCustomer.id, name: newCustomer.name, phone: newCustomerPhone }]);
+                            setShowAddCustomer(false);
+                            setNewCustomerName("");
+                            setNewCustomerPhone("");
+                            setNewCustomerNotes("");
+                          } catch (err) {
+                            setError(err instanceof Error ? err.message : "Failed to create customer");
+                          } finally {
+                            setAddingCustomer(false);
+                          }
+                        }}
+                        disabled={addingCustomer}
+                      >
+                        {addingCustomer ? <Loader2 size={16} className="animate-spin" /> : "Add Customer"}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -421,22 +547,14 @@ export default function NewInvoicePage() {
                 <h3 style={{ fontSize: "0.9375rem", fontWeight: 600 }}>
                   Items
                 </h3>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={addItem}
-                >
-                  <Plus size={14} />
-                  Add Item
-                </button>
-              </div>
+                </div>
 
               {/* Item Header - hidden on mobile */}
               <div
                 className="invoice-header-row"
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "2fr 1fr 1fr 1fr auto",
+                  gridTemplateColumns: "2fr 1fr 0.7fr 1fr 1fr auto",
                   gap: "0.75rem",
                   padding: "0 0 0.5rem",
                   borderBottom: "1px solid var(--border)",
@@ -444,6 +562,7 @@ export default function NewInvoicePage() {
                 }}
               >
                 <span className="input-label">Product</span>
+                <span className="input-label">Unit</span>
                 <span className="input-label">Qty</span>
                 <span className="input-label">Price (₹)</span>
                 <span className="input-label">Subtotal</span>
@@ -459,6 +578,7 @@ export default function NewInvoicePage() {
                       <input
                         className="input"
                         placeholder="Search or add product..."
+                        data-item-id={item.id}
                         value={
                           activeItemSearch === item.id
                             ? productSearch
@@ -543,6 +663,47 @@ export default function NewInvoicePage() {
                       )}
                     </div>
 
+                    {/* Unit */}
+                    <div style={{ display: "flex", gap: "0.25rem", width: "100%" }}>
+                      <select
+                        className="input"
+                        value={
+                          item.unit && !PREDEFINED_UNITS.includes(item.unit)
+                            ? "custom"
+                            : item.unit
+                        }
+                        onChange={(e) => {
+                          if (e.target.value === "custom") {
+                            updateItem(item.id, { unit: "OTHER" });
+                          } else {
+                            updateItem(item.id, { unit: e.target.value });
+                          }
+                        }}
+                        style={{ 
+                          padding: "0.375rem",
+                          width: "100%",
+                          minWidth: "70px",
+                        }}
+                      >
+                        <option value="">-</option>
+                        {PREDEFINED_UNITS.map((u) => (
+                          <option key={u} value={u}>{u}</option>
+                        ))}
+                        <option value="custom">Other</option>
+                      </select>
+                      {(item.unit === "OTHER" || (item.unit && !PREDEFINED_UNITS.includes(item.unit))) && (
+                        <input
+                          className="input"
+                          value={item.unit === "OTHER" ? "" : item.unit}
+                          onChange={(e) =>
+                            updateItem(item.id, { unit: e.target.value })
+                          }
+                          placeholder="Unit"
+                          style={{ padding: "0.375rem", minWidth: "60px" }}
+                        />
+                      )}
+                    </div>
+
                     {/* Quantity */}
                     <input
                       type="number"
@@ -620,6 +781,16 @@ export default function NewInvoicePage() {
                   )}
                 </div>
               ))}
+
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={addItem}
+                style={{ marginTop: "0.75rem" }}
+              >
+                <Plus size={14} />
+                Add Item
+              </button>
             </div>
 
             {/* Amounts */}

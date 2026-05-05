@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ajuha-jewellers-v1';
+const CACHE_NAME = 'ahuja-jewellers-v1';
 const STATIC_ASSETS = [
   '/',
   '/login',

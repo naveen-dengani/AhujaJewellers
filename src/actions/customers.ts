@@ -62,6 +62,8 @@ export async function getCustomersWithBalance() {
       phone: customer.phone,
       notes: customer.notes,
       pendingBalance: Math.max(0, pendingBalance),
+      createdAt: customer.createdAt,
+      updatedAt: customer.updatedAt,
     };
   });
 }
@@ -87,7 +89,9 @@ export async function createCustomer(data: CustomerInput) {
 
   const customer = await prisma.customer.create({
     data: {
-      ...validated,
+      name: validated.name,
+      phone: validated.phone || null,
+      notes: validated.notes || null,
       userId,
     },
   });
@@ -102,7 +106,11 @@ export async function updateCustomer(id: string, data: CustomerInput) {
 
   const customer = await prisma.customer.update({
     where: { id },
-    data: validated,
+    data: {
+      name: validated.name,
+      phone: validated.phone || null,
+      notes: validated.notes || null,
+    },
   });
 
   revalidatePath("/dashboard/customers");

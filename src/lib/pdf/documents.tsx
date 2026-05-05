@@ -93,9 +93,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: "#eee",
   },
-  col1: { width: "50%" },
-  col2: { width: "15%", textAlign: "right" },
-  col3: { width: "15%", textAlign: "right" },
+  col1: { width: "40%" },
+  col1_5: { width: "10%" },
+  col2: { width: "12%", textAlign: "right" },
+  col3: { width: "18%", textAlign: "right" },
   col4: { width: "20%", textAlign: "right" },
   
   totals: {
@@ -140,6 +141,7 @@ interface InvoicePDFProps {
     pendingAmount: number;
     items: Array<{
       productName: string;
+      unit: string | null;
       quantity: number;
       price: number;
       subtotal: number;
@@ -180,6 +182,7 @@ export function InvoicePDF({ invoice }: InvoicePDFProps) {
           <View style={styles.table}>
             <View style={styles.tableHeader}>
               <Text style={[styles.tableHeaderText, styles.col1]}>Product</Text>
+              <Text style={[styles.tableHeaderText, styles.col1_5]}>Unit</Text>
               <Text style={[styles.tableHeaderText, styles.col2]}>Qty</Text>
               <Text style={[styles.tableHeaderText, styles.col3]}>Price</Text>
               <Text style={[styles.tableHeaderText, styles.col4]}>Subtotal</Text>
@@ -187,6 +190,7 @@ export function InvoicePDF({ invoice }: InvoicePDFProps) {
             {invoice.items.map((item, index) => (
               <View key={index} style={styles.tableRow}>
                 <Text style={styles.col1}>{item.productName}</Text>
+                <Text style={styles.col1_5}>{item.unit && item.unit.trim() ? item.unit : "-"}</Text>
                 <Text style={styles.col2}>{item.quantity}</Text>
                 <Text style={styles.col3}>{formatCurrency(item.price)}</Text>
                 <Text style={styles.col4}>{formatCurrency(item.subtotal)}</Text>
