@@ -11,7 +11,7 @@ import {
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { LOGO_BASE64 } from "./logo";
 
-const SHOP_NAME = "AJUHA JEWELLERS";
+const SHOP_NAME = "AHUJA JEWELLERS";
 const SHOP_OWNER = "Mayank Dengani";
 const SHOP_PHONE = "9165795141";
 const SHOP_ADDRESS_LINE1 = "Shalimar Market, Station Road";
