@@ -1,28 +1,23 @@
 import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log("🌱 Seeding database...\n");
 
-  // Create admin user only
-  const hashedPassword = await bcrypt.hash("admin123", 10);
+  // Create admin user (passkey-based, no password)
   const user = await prisma.user.upsert({
     where: { email: "admin@ahuja.com" },
     update: {},
     create: {
       email: "admin@ahuja.com",
-      password: hashedPassword,
       name: "Ahuja Admin",
     },
   });
   console.log("✅ Admin user created:", user.email);
 
   console.log("\n🎉 Seed completed!");
-  console.log("\n📧 Login credentials:");
-  console.log("   Email: admin@ahuja.com");
-  console.log("   Password: admin123\n");
+  console.log("\n📧 Login: Use passkey authentication");
 }
 
 main()

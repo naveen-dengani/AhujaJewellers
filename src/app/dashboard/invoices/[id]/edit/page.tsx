@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-type Customer = { id: string; name: string; phone: string };
+type Customer = { id: string; name: string; phone: string | null };
 type Product = { id: string; name: string; unit: string | null; defaultPrice: number };
 
 const PREDEFINED_UNITS = ["piece", "line", "dozen", "kg"];
@@ -259,7 +259,7 @@ export default function EditInvoicePage({
         items: validItems.map((item) => ({
           productId: item.productId || undefined,
           productName: item.productName,
-          unit: item.unit && item.unit !== "OTHER" ? item.unit : undefined,
+          unit: item.unit && item.unit !== "OTHER" ? item.unit : null,
           quantity: item.quantity,
           price: item.price,
           isNew: item.isNew,

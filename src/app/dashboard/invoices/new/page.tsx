@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-type Customer = { id: string; name: string; phone: string };
+type Customer = { id: string; name: string; phone: string | null };
 type Product = { id: string; name: string; unit: string | null; defaultPrice: number };
 
 const PREDEFINED_UNITS = ["piece", "line", "dozen", "kg"];
@@ -137,7 +137,7 @@ export default function NewInvoicePage() {
   const filteredCustomers = customers.filter(
     (c) =>
       c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-      c.phone.includes(customerSearch)
+      (c.phone && c.phone.includes(customerSearch))
   );
 
   const selectedCustomer = customers.find((c) => c.id === customerId);

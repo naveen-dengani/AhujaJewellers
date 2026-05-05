@@ -57,11 +57,16 @@ export default function LoginPage() {
       const credential = await navigator.credentials.get({
         publicKey: {
           challenge: crypto.getRandomValues(new Uint8Array(32)),
-          rp: { name: "Ahuja Jewellers" },
-          allowCredentials: allowCredentials.length > 0 ? allowCredentials : undefined,
+          allowCredentials: allowCredentials.length > 0 ? allowCredentials : [],
           userVerification: "preferred",
         },
       });
+
+      if (!credential) {
+        setError("Authentication cancelled");
+        setLoading(false);
+        return;
+      }
 
       const verifyRes = await verifyPasskey(normalizedEmail, "authenticate", credential);
       
@@ -117,6 +122,12 @@ export default function LoginPage() {
           ],
         },
       });
+
+      if (!credential) {
+        setError("Registration cancelled");
+        setLoading(false);
+        return;
+      }
 
       const verifyRes = await verifyPasskey(normalizedEmail, "register", credential);
 

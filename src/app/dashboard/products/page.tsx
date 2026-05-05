@@ -93,7 +93,7 @@ export default function ProductsPage() {
     setName(product.name);
     const isCustom = product.unit && !PREDEFINED_UNITS.includes(product.unit);
     setUnit(isCustom ? "custom" : (product.unit || ""));
-    setCustomUnit(isCustom ? product.unit : "");
+    setCustomUnit(isCustom ? (product.unit || "") : "");
     setDefaultPrice(product.defaultPrice.toString());
     setDescription(product.description || "");
     setFormError("");
@@ -170,7 +170,7 @@ export default function ProductsPage() {
       setName(product.name);
       const isCustom = product.unit && !PREDEFINED_UNITS.includes(product.unit);
       setUnit(isCustom ? "custom" : (product.unit || ""));
-      setCustomUnit(isCustom ? product.unit : "");
+      setCustomUnit(isCustom ? (product.unit || "") : "");
       setDefaultPrice(product.defaultPrice.toString());
       setDescription(product.description || "");
       setShowSimilarModal(false);

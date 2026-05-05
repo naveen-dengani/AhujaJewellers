@@ -26,6 +26,7 @@ import Link from "next/link";
 type InvoiceItem = {
   id: string;
   productName: string;
+  unit: string | null;
   quantity: number;
   price: number;
   subtotal: number;

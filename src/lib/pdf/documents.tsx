@@ -133,7 +133,7 @@ interface InvoicePDFProps {
   invoice: {
     invoiceNumber: string;
     invoiceDate: Date;
-    customer: { name: string; phone: string };
+    customer: { name: string; phone: string | null };
     transportAmount: number;
     taxAmount: number;
     totalAmount: number;
@@ -247,7 +247,7 @@ export function InvoicePDF({ invoice }: InvoicePDFProps) {
 interface BalancePDFProps {
   customer: {
     name: string;
-    phone: string;
+    phone: string | null;
     notes: string | null;
   };
   balance: {
