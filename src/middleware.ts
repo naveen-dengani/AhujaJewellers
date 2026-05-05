@@ -1,22 +1,17 @@
-// import { auth } from "@/lib/auth";
-// import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 
-// export default auth((req) => {
-//   const isLoggedIn = !!req.auth;
-//   const isOnDashboard = req.nextUrl.pathname.startsWith("/dashboard");
-//   const isOnLogin = req.nextUrl.pathname.startsWith("/login");
+export default auth((req) => {
+  const isLoggedIn = !!req.auth;
+  const isOnLogin = req.nextUrl.pathname.startsWith("/login");
 
-//   if (isOnDashboard && !isOnLogin) {
-//     if (!isLoggedIn) {
-//       return NextResponse.redirect(new URL("/login", req.nextUrl));
-//     }
-//   }
+  if (!isLoggedIn && !isOnLogin) {
+    return NextResponse.redirect(new URL("/login", req.nextUrl));
+  }
 
-//   return NextResponse.next();
-// });
+  return NextResponse.next();
+});
 
-// export const config = {
-//   matcher: ["/dashboard/:path*", "/login"],
-// };
-
-export function middleware() {}
+export const config = {
+  matcher: ["/dashboard/:path*", "/((?!api|_next/static|_next/image|favicon.ico).*)"],
+};
