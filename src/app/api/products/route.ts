@@ -9,6 +9,7 @@ export async function GET() {
   }
 
   const products = await prisma.product.findMany({
+    include: { unit: true },
     orderBy: { name: "asc" },
   });
 
@@ -22,18 +23,10 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { name, unit, defaultPrice, description } = body;
+  const { name, unitId, defaultPrice, description } = body;
 
   if (!name) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
-  }
-
-  const existing = await prisma.product.findFirst({
-    where: { name: { equals: name, mode: "insensitive" } },
-  });
-
-  if (existing) {
-    return NextResponse.json({ error: "Product already exists" }, { status: 400 });
   }
 
   const user = await prisma.user.findFirst();
@@ -41,10 +34,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No user found" }, { status: 500 });
   }
 
+  const existing = await prisma.product.findFirst({
+    where: { name: { equals: name, mode: "insensitive" }, userId: user.id },
+  });
+
+  if (existing) {
+    return NextResponse.json({ error: "Product already exists" }, { status: 400 });
+  }
+
   const product = await prisma.product.create({
     data: {
       name,
-      unit: unit || null,
+      unitId: unitId || null,
       defaultPrice: defaultPrice || 0,
       description: description || null,
       userId: user.id,

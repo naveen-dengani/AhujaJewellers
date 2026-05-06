@@ -18,6 +18,18 @@ model User {
   invoices  Invoice[]
   payments  Payment[]
   products  Product[]
+  units     Unit[]
+}
+
+model Unit {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  userId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products  Product[]
+
+  @@index([userId])
 }
 
 model PasskeyCredential {
@@ -54,16 +66,18 @@ model Customer {
 model Product {
   id           String        @id @default(cuid())
   name         String
-  unit         String?
+  unitId       String?
   defaultPrice Float         @default(0)
   description  String?
   userId       String
   createdAt    DateTime      @default(now())
   invoiceItems InvoiceItem[]
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unit         Unit?         @relation(fields: [unitId], references: [id])
 
   @@unique([name, userId])
   @@index([userId])
+  @@index([unitId])
 }
 
 model Invoice {

@@ -10,7 +10,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
   const { id } = await params;
   const body = await request.json();
-  const { name, unit, defaultPrice, description } = body;
+  const { name, unitId, defaultPrice, description } = body;
 
   const product = await prisma.product.findUnique({
     where: { id },
@@ -24,7 +24,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     where: { id },
     data: {
       name: name || product.name,
-      unit: unit ?? product.unit,
+      unitId: unitId !== undefined ? unitId : product.unitId,
       defaultPrice: defaultPrice ?? product.defaultPrice,
       description: description ?? product.description,
     },

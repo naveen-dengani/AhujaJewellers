@@ -1,29 +1,38 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Search, Package, Edit, Trash2, X, AlertTriangle } from "lucide-react";
+import { Plus, Search, Package, Edit, Trash2, X, AlertTriangle, Settings } from "lucide-react";
+import Link from "next/link";
 import { calculateSimilarity } from "@/lib/utils";
+
+interface Unit {
+  id: string;
+  name: string;
+}
 
 interface Product {
   id: string;
   name: string;
-  unit: string | null;
+  unitId: string | null;
+  unit: Unit | null;
   defaultPrice: number;
   description: string | null;
 }
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [formData, setFormData] = useState({ name: "", unit: "", defaultPrice: "", description: "" });
+  const [formData, setFormData] = useState({ name: "", unitId: "", defaultPrice: "", description: "" });
   const [saving, setSaving] = useState(false);
   const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
 
   useEffect(() => {
     fetchProducts();
+    fetchUnits();
   }, []);
 
   const fetchProducts = async () => {
@@ -38,11 +47,20 @@ export default function ProductsPage() {
     }
   };
 
+  const fetchUnits = async () => {
+    try {
+      const res = await fetch("/api/units");
+      const data = await res.json();
+      setUnits(data);
+    } catch (err) {
+      console.error("Failed to fetch units", err);
+    }
+  };
+
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Check for similar products when name changes
   useEffect(() => {
     if (formData.name && !editingProduct) {
       const similar = products.filter(p => 
@@ -67,7 +85,7 @@ export default function ProductsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.name,
-          unit: formData.unit || null,
+          unitId: formData.unitId || null,
           defaultPrice: parseFloat(formData.defaultPrice) || 0,
           description: formData.description || null,
         }),
@@ -75,7 +93,7 @@ export default function ProductsPage() {
 
       setShowModal(false);
       setEditingProduct(null);
-      setFormData({ name: "", unit: "", defaultPrice: "", description: "" });
+      setFormData({ name: "", unitId: "", defaultPrice: "", description: "" });
       fetchProducts();
     } catch (err) {
       console.error("Failed to save product", err);
@@ -99,14 +117,12 @@ export default function ProductsPage() {
     setEditingProduct(product);
     setFormData({ 
       name: product.name, 
-      unit: product.unit || "", 
+      unitId: product.unitId || "", 
       defaultPrice: product.defaultPrice.toString(), 
       description: product.description || "" 
     });
     setShowModal(true);
   };
-
-  const unitOptions = ["piece", "gram", "kg", "dozen", "pair", "set", "meter"];
 
   return (
     <div>
@@ -126,8 +142,13 @@ export default function ProductsPage() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <button className="btn btn-primary" onClick={() => { setEditingProduct(null); setFormData({ name: "", unit: "", defaultPrice: "", description: "" }); setShowModal(true); }}>
-          <Plus size={18} />
+        <Link href="/dashboard/units" className="btn btn-secondary btn-sm">
+          <Settings size={16} />
+          Units
+        </Link>
+        <button className="btn btn-primary btn-sm" onClick={() => { setEditingProduct(null); setFormData({ name: "", unitId: "", defaultPrice: "", description: "" }); setShowModal(true); }}>
+          <Plus size={16} />
+          Add Product
         </button>
       </div>
 
@@ -146,7 +167,7 @@ export default function ProductsPage() {
               <div className="product-info">
                 <div className="product-name">{product.name}</div>
                 <div className="product-details">
-                  {product.unit && <span className="product-unit">{product.unit}</span>}
+                  {product.unit && <span className="product-unit">{product.unit.name}</span>}
                   <span className="product-price">₹{product.defaultPrice.toLocaleString()}</span>
                 </div>
               </div>
@@ -174,7 +195,6 @@ export default function ProductsPage() {
               </button>
             </div>
 
-            {/* Similar Products Warning */}
             {similarProducts.length > 0 && (
               <div className="similar-warning">
                 <AlertTriangle size={18} />
@@ -197,11 +217,11 @@ export default function ProductsPage() {
                 <label className="form-label">Unit</label>
                 <select
                   className="form-input"
-                  value={formData.unit}
-                  onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                  value={formData.unitId}
+                  onChange={(e) => setFormData({ ...formData, unitId: e.target.value })}
                 >
                   <option value="">Select unit</option>
-                  {unitOptions.map(u => <option key={u} value={u}>{u}</option>)}
+                  {units.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                 </select>
               </div>
               <div className="form-group">
@@ -258,6 +278,7 @@ export default function ProductsPage() {
         .modal-actions { display: flex; gap: 12px; margin-top: 20px; }
         .modal-actions .btn { flex: 1; }
         .similar-warning { display: flex; align-items: center; gap: 8px; padding: 12px; background: rgba(202, 138, 4, 0.1); border-radius: 8px; font-size: 0.8125rem; color: var(--warning); margin-bottom: 16px; }
+        .btn-sm { padding: 8px 12px; font-size: 0.8125rem; display: flex; align-items: center; gap: 6px; }
       `}</style>
     </div>
   );
