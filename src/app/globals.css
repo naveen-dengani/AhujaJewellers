@@ -1116,7 +1116,82 @@ tr:hover td {
     display: none;
   }
 
-  /* Invoice amounts grid mobile */
+  /* Invoice items card style */
+.invoice-item-card {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--border);
+}
+
+.invoice-item-card .invoice-item-field {
+  margin-bottom: 0.75rem;
+}
+
+.invoice-item-card .invoice-item-field:last-child {
+  margin-bottom: 0;
+}
+
+.invoice-item-card .field-label-mobile {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 0.375rem;
+}
+
+.invoice-item-card .combobox-container {
+  position: relative;
+}
+
+.invoice-item-card .combobox-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 20;
+  box-shadow: var(--shadow-md);
+}
+
+.invoice-item-card .invoice-item-value {
+  font-weight: 600;
+  padding: 0.75rem 0;
+  font-size: 1rem;
+}
+
+/* Desktop: inline row style */
+@media (min-width: 769px) {
+  .invoice-item-card {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 2fr 1fr 0.7fr 1fr 1fr auto;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .invoice-item-card .invoice-item-field {
+    margin-bottom: 0;
+  }
+
+  .invoice-item-card .field-label-mobile {
+    display: none;
+  }
+
+  .invoice-item-card .combobox-dropdown {
+    position: absolute;
+    max-height: 250px;
+  }
+}
   .invoice-amounts-grid {
     grid-template-columns: 1fr !important;
   }
