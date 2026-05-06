@@ -9,39 +9,44 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email", required: true },
-        password: { label: "Password", type: "password" },
+        password: { label: "Password", type: "password", required: true },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        try {
+          if (!credentials?.email || !credentials?.password) {
+            return null;
+          }
+
+          const email = (credentials.email as string).toLowerCase();
+          const password = credentials.password as string;
+
+          const user = await prisma.user.findUnique({
+            where: { email },
+          });
+
+          if (!user) {
+            return null;
+          }
+
+          if (!user.password) {
+            return null;
+          }
+
+          const isValid = await bcrypt.compare(password, user.password);
+          
+          if (!isValid) {
+            return null;
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+          };
+        } catch (error) {
+          console.error("Authorize error:", error);
           return null;
         }
-
-        const email = (credentials.email as string).toLowerCase();
-        const password = credentials.password as string;
-
-        const user = await prisma.user.findUnique({
-          where: { email },
-        });
-
-        if (!user) {
-          return null;
-        }
-
-        if (!user.password) {
-          return null;
-        }
-
-        const isValid = await bcrypt.compare(password, user.password);
-        
-        if (!isValid) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        };
       },
     }),
   ],
