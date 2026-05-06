@@ -119,11 +119,8 @@ export default function InvoiceDetailClient({ invoice }: InvoiceDetailClientProp
               Created on {formatDate(invoice.createdAt)}
             </p>
           </div>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
-            <button
-              className="btn btn-secondary"
-              onClick={handlePrint}
-            >
+          <div className="header-actions">
+            <button className="btn btn-secondary" onClick={handlePrint}>
               <Printer size={16} />
               Print
             </button>
@@ -159,9 +156,9 @@ export default function InvoiceDetailClient({ invoice }: InvoiceDetailClientProp
         </div>
       </div>
 
-      <div className="grid-2">
+      <div className="grid-2 grid-2-responsive">
         {/* Invoice Details */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+        <div className="stack-card-list">
           {/* Customer & Date Info */}
           <div className="card">
             <h3
@@ -173,13 +170,7 @@ export default function InvoiceDetailClient({ invoice }: InvoiceDetailClientProp
             >
               Invoice Information
             </h3>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "1rem",
-              }}
-            >
+            <div className="info-grid">
               <div
                 style={{
                   display: "flex",
@@ -294,36 +285,41 @@ export default function InvoiceDetailClient({ invoice }: InvoiceDetailClientProp
                 Items ({invoice.items.length})
               </h3>
             </div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Unit</th>
-                  <th>Qty</th>
-                  <th>Price</th>
-                  <th>Subtotal</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoice.items.map((item) => (
-                  <tr key={item.id}>
-                    <td style={{ fontWeight: 500 }}>{item.productName}</td>
-                    <td>{item.unit && item.unit.trim() && item.unit !== "OTHER" ? item.unit : "-"}</td>
-                    <td>{item.quantity}</td>
-                    <td>{formatCurrency(item.price)}</td>
-                    <td style={{ fontWeight: 500 }}>
-                      {formatCurrency(item.subtotal)}
-                    </td>
+            <div className="table-container table-stack" style={{ border: "none", boxShadow: "none", margin: 0 }}>
+              <table className="table-stack">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Unit</th>
+                    <th>Qty</th>
+                    <th>Price</th>
+                    <th>Subtotal</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {invoice.items.map((item) => (
+                    <tr key={item.id}>
+                      <td data-label="Product" style={{ fontWeight: 500 }}>{item.productName}</td>
+                      <td data-label="Unit">{item.unit && item.unit.trim() && item.unit !== "OTHER" ? item.unit : "-"}</td>
+                      <td data-label="Qty">{item.quantity}</td>
+                      <td data-label="Price">{formatCurrency(item.price)}</td>
+                      <td data-label="Subtotal" style={{ fontWeight: 500 }}>
+                        {formatCurrency(item.subtotal)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
         {/* Right Column - Summary */}
         <div>
-          <div className="card card-gold" style={{ position: "sticky", top: "1.5rem" }}>
+          <div
+            className="card card-gold invoice-summary-card"
+            style={{ marginBottom: "1.5rem" }}
+          >
             <h3 style={{ fontSize: "0.9375rem", fontWeight: 600, marginBottom: "1rem" }}>
               Payment Summary
             </h3>
@@ -396,6 +392,9 @@ export default function InvoiceDetailClient({ invoice }: InvoiceDetailClientProp
                 ? "✓ Fully Paid"
                 : `⏳ ${formatCurrency(invoice.pendingAmount)} Pending`}
             </div>
+          </div>
+          <div className="stacked-actions">
+            {/* Add action buttons here */}
           </div>
         </div>
       </div>

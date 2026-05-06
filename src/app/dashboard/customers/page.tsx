@@ -150,21 +150,31 @@ export default function CustomersPage() {
             Manage your customer directory ({customers.length} total)
           </p>
         </div>
-        <button className="btn btn-primary" onClick={openCreateModal}>
-          <Plus size={18} />
-          Add Customer
-        </button>
+        <div className="header-actions">
+          <button className="btn btn-primary" onClick={openCreateModal}>
+            <Plus size={18} />
+            Add Customer
+          </button>
+        </div>
       </div>
 
       {/* Search */}
-      <div className="search-container" style={{ marginBottom: "1rem", maxWidth: "400px" }}>
-        <Search size={16} className="search-icon" />
-        <input
-          className="input"
-          placeholder="Search by name or phone..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      <div className="filter-bar" style={{ marginBottom: "1rem" }}>
+        <div className="filter-field">
+          <label className="input-label" htmlFor="customer-search">
+            Search
+          </label>
+          <div className="search-container full-width">
+            <Search size={16} className="search-icon" />
+            <input
+              id="customer-search"
+              className="input"
+              placeholder="Search by name or phone..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
       </div>
 
       
@@ -200,8 +210,8 @@ export default function CustomersPage() {
           )}
         </div>
       ) : (
-        <div className="table-container">
-          <table>
+        <div className="table-container table-stack">
+          <table className="table-stack">
             <thead>
               <tr>
                 <th>
@@ -265,7 +275,7 @@ export default function CustomersPage() {
               {filteredCustomers.map((customer) => {
                 return (
                   <tr key={customer.id}>
-                    <td>
+                    <td data-label="Name">
                       <Link
                         href={`/dashboard/customers/${customer.id}`}
                         style={{
@@ -277,10 +287,11 @@ export default function CustomersPage() {
                         {customer.name}
                       </Link>
                     </td>
-                    <td style={{ color: "var(--text-secondary)" }}>
+                    <td data-label="Phone" style={{ color: "var(--text-secondary)" }}>
                       {customer.phone}
                     </td>
                     <td
+                      data-label="Notes"
                       style={{
                         color: "var(--text-muted)",
                         maxWidth: "200px",
@@ -291,7 +302,7 @@ export default function CustomersPage() {
                     >
                       {customer.notes || "—"}
                     </td>
-                    <td>
+                    <td data-label="Pending">
                       <span
                         className={`badge ${
                           customer.pendingBalance > 0 ? "badge-danger" : "badge-success"
@@ -300,14 +311,14 @@ export default function CustomersPage() {
                         {formatCurrency(customer.pendingBalance)}
                       </span>
                     </td>
-                    <td style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>
+                    <td data-label="Created" style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>
                       {customer.createdAt ? formatDate(new Date(customer.createdAt)) : "—"}
                     </td>
-                    <td style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>
+                    <td data-label="Modified" style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>
                       {customer.updatedAt ? formatDate(new Date(customer.updatedAt)) : "—"}
                     </td>
-                    <td>
-                      <div style={{ display: "flex", gap: "0.25rem" }}>
+                    <td data-label="Actions">
+                      <div className="table-actions">
                         <button
                           className="btn btn-ghost btn-icon"
                           onClick={() => openEditModal(customer)}

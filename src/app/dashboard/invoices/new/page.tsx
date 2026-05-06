@@ -331,18 +331,18 @@ export default function NewInvoicePage() {
 
   return (
     <div>
-      <div style={{ marginBottom: "1.5rem" }}>
-        <Link
-          href="/dashboard/invoices"
-          className="btn btn-ghost btn-sm"
-          style={{ marginBottom: "0.75rem" }}
-        >
-          <ArrowLeft size={16} /> Back to Invoices
-        </Link>
-        <h1 className="page-title">Create New Invoice</h1>
-        <p className="page-subtitle">
-          Add items, set pricing, and create a new invoice
-        </p>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Create New Invoice</h1>
+          <p className="page-subtitle">
+            Add items, set pricing, and create a new invoice
+          </p>
+        </div>
+        <div className="stacked-actions">
+          <Link href="/dashboard/invoices" className="btn btn-ghost btn-sm">
+            <ArrowLeft size={16} /> Back to Invoices
+          </Link>
+        </div>
       </div>
 
       {error && (
@@ -362,9 +362,9 @@ export default function NewInvoicePage() {
       )}
 
       <form onSubmit={handleSubmit}>
-        <div className="grid-2">
+        <div className="grid-2 grid-2-responsive">
           {/* Left Column - Invoice Form */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          <div className="stack-card-list">
             {/* Customer & Date */}
             <div className="card">
               <h3 style={{ fontSize: "0.9375rem", fontWeight: 600, marginBottom: "1rem" }}>
@@ -574,186 +574,191 @@ export default function NewInvoicePage() {
                 <div key={item.id}>
                   <div className="invoice-item-row">
                     {/* Product select with combobox */}
-                    <div className="combobox-container" ref={activeItemSearch === item.id ? dropdownRef : undefined}>
-                      <input
-                        className="input"
-                        placeholder="Search or add product..."
-                        data-item-id={item.id}
-                        value={
-                          activeItemSearch === item.id
-                            ? productSearch
-                            : item.productName
-                        }
-                        onChange={(e) => {
-                          setProductSearch(e.target.value);
-                          setActiveItemSearch(item.id);
-                        }}
-                        onFocus={() => {
-                          setActiveItemSearch(item.id);
-                          setProductSearch(item.productName);
-                        }}
-                      />
-                      {item.isNew && item.productName && (
-                        <span
-                          className="badge badge-gold new-product-badge"
-                          style={{
-                            position: "absolute",
-                            right: "0.5rem",
-                            top: "50%",
-                            transform: "translateY(-50%)",
-                            fontSize: "0.625rem",
+                    <div className="invoice-item-field combobox-wrapper" ref={activeItemSearch === item.id ? dropdownRef : undefined}>
+                      <label className="field-label-mobile">Product</label>
+                      <div className="combobox-container">
+                        <input
+                          className="input"
+                          placeholder="Search or add product..."
+                          data-item-id={item.id}
+                          value={
+                            activeItemSearch === item.id
+                              ? productSearch
+                              : item.productName
+                          }
+                          onChange={(e) => {
+                            setProductSearch(e.target.value);
+                            setActiveItemSearch(item.id);
                           }}
-                        >
-                          NEW
-                        </span>
-                      )}
+                          onFocus={() => {
+                            setActiveItemSearch(item.id);
+                            setProductSearch(item.productName);
+                          }}
+                        />
+                        {item.isNew && item.productName && (
+                          <span
+                            className="badge badge-gold new-product-badge"
+                            style={{
+                              position: "absolute",
+                              right: "0.5rem",
+                              top: "50%",
+                              transform: "translateY(-50%)",
+                              fontSize: "0.625rem",
+                            }}
+                          >
+                            NEW
+                          </span>
+                        )}
 
-                      {activeItemSearch === item.id && (
-                        <div className="combobox-dropdown">
-                          {filteredProducts.length > 0 ? (
-                            filteredProducts.map((product) => (
-                              <div
-                                key={product.id}
-                                className={`combobox-option ${item.productId === product.id ? "selected" : ""}`}
-                                onClick={() => selectProduct(item.id, product)}
-                              >
-                                <div style={{ fontWeight: 500 }}>
-                                  {product.name}
-                                </div>
+                        {activeItemSearch === item.id && (
+                          <div className="combobox-dropdown">
+                            {filteredProducts.length > 0 ? (
+                              filteredProducts.map((product) => (
                                 <div
-                                  style={{
-                                    fontSize: "0.75rem",
-                                    color: "var(--text-muted)",
-                                  }}
+                                  key={product.id}
+                                  className={`combobox-option ${item.productId === product.id ? "selected" : ""}`}
+                                  onClick={() => selectProduct(item.id, product)}
                                 >
-                                  Default: {formatCurrency(product.defaultPrice)}
+                                  <div style={{ fontWeight: 500 }}>
+                                    {product.name}
+                                  </div>
+                                  <div
+                                    style={{
+                                      fontSize: "0.75rem",
+                                      color: "var(--text-muted)",
+                                    }}
+                                  >
+                                    Default: {formatCurrency(product.defaultPrice)}
+                                  </div>
                                 </div>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="combobox-empty">
-                              No products found
-                            </div>
-                          )}
-
-                          {/* Add new product option */}
-                          {productSearch.trim() &&
-                            !products.some(
-                              (p) =>
-                                p.name.toLowerCase() ===
-                                productSearch.toLowerCase()
-                            ) && (
-                              <div
-                                className="combobox-create"
-                                onClick={() =>
-                                  createNewProductItem(
-                                    item.id,
-                                    productSearch.trim()
-                                  )
-                                }
-                              >
-                                <Package size={14} />
-                                <span>
-                                  Add &quot;{productSearch.trim()}&quot; as new
-                                  product
-                                </span>
+                              ))
+                            ) : (
+                              <div className="combobox-empty">
+                                No products found
                               </div>
                             )}
-                        </div>
-                      )}
+
+                            {/* Add new product option */}
+                            {productSearch.trim() &&
+                              !products.some(
+                                (p) =>
+                                  p.name.toLowerCase() ===
+                                  productSearch.toLowerCase()
+                              ) && (
+                                <div
+                                  className="combobox-create"
+                                  onClick={() =>
+                                    createNewProductItem(
+                                      item.id,
+                                      productSearch.trim()
+                                    )
+                                  }
+                                >
+                                  <Package size={14} />
+                                  <span>
+                                    Add "{productSearch.trim()}" as new
+                                    product
+                                  </span>
+                                </div>
+                              )}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* Unit */}
-                    <div style={{ display: "flex", gap: "0.25rem", width: "100%" }}>
-                      <select
-                        className="input"
-                        value={
-                          item.unit && !PREDEFINED_UNITS.includes(item.unit)
-                            ? "custom"
-                            : item.unit
-                        }
-                        onChange={(e) => {
-                          if (e.target.value === "custom") {
-                            updateItem(item.id, { unit: "OTHER" });
-                          } else {
-                            updateItem(item.id, { unit: e.target.value });
-                          }
-                        }}
-                        style={{ 
-                          padding: "0.375rem",
-                          width: "100%",
-                          minWidth: "70px",
-                        }}
-                      >
-                        <option value="">-</option>
-                        {PREDEFINED_UNITS.map((u) => (
-                          <option key={u} value={u}>{u}</option>
-                        ))}
-                        <option value="custom">Other</option>
-                      </select>
-                      {(item.unit === "OTHER" || (item.unit && !PREDEFINED_UNITS.includes(item.unit))) && (
-                        <input
+                    <div className="invoice-item-field">
+                      <label className="field-label-mobile">Unit</label>
+                      <div className="unit-inputs">
+                        <select
                           className="input"
-                          value={item.unit === "OTHER" ? "" : item.unit}
-                          onChange={(e) =>
-                            updateItem(item.id, { unit: e.target.value })
+                          value={
+                            item.unit && !PREDEFINED_UNITS.includes(item.unit)
+                              ? "custom"
+                              : item.unit
                           }
-                          placeholder="Unit"
-                          style={{ padding: "0.375rem", minWidth: "60px" }}
-                        />
-                      )}
+                          onChange={(e) => {
+                            if (e.target.value === "custom") {
+                              updateItem(item.id, { unit: "OTHER" });
+                            } else {
+                              updateItem(item.id, { unit: e.target.value });
+                            }
+                          }}
+                        >
+                          <option value="">-</option>
+                          {PREDEFINED_UNITS.map((u) => (
+                            <option key={u} value={u}>{u}</option>
+                          ))}
+                          <option value="custom">Other</option>
+                        </select>
+                        {(item.unit === "OTHER" || (item.unit && !PREDEFINED_UNITS.includes(item.unit))) && (
+                          <input
+                            className="input"
+                            value={item.unit === "OTHER" ? "" : item.unit}
+                            onChange={(e) =>
+                              updateItem(item.id, { unit: e.target.value })
+                            }
+                            placeholder="Unit"
+                          />
+                        )}
+                      </div>
                     </div>
 
                     {/* Quantity */}
-                    <input
-                      type="number"
-                      className="input"
-                      value={item.quantity}
-                      onChange={(e) =>
-                        updateItem(item.id, {
-                          quantity: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      min="0.01"
-                      step="0.01"
-                    />
+                    <div className="invoice-item-field">
+                      <label className="field-label-mobile">Qty</label>
+                      <input
+                        type="number"
+                        className="input"
+                        value={item.quantity}
+                        onChange={(e) =>
+                          updateItem(item.id, {
+                            quantity: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                        min="0.01"
+                        step="0.01"
+                      />
+                    </div>
 
                     {/* Price */}
-                    <input
-                      type="number"
-                      className="input"
-                      value={item.price}
-                      onChange={(e) =>
-                        updateItem(item.id, {
-                          price: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      min="0"
-                      step="0.01"
-                    />
+                    <div className="invoice-item-field">
+                      <label className="field-label-mobile">Price</label>
+                      <input
+                        type="number"
+                        className="input"
+                        value={item.price}
+                        onChange={(e) =>
+                          updateItem(item.id, {
+                            price: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                        min="0"
+                        step="0.01"
+                      />
+                    </div>
 
                     {/* Subtotal */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        fontWeight: 500,
-                        fontSize: "0.875rem",
-                      }}
-                    >
-                      {formatCurrency(item.quantity * item.price)}
+                    <div className="invoice-item-field">
+                      <label className="field-label-mobile">Subtotal</label>
+                      <div className="invoice-item-value">
+                        {formatCurrency(item.quantity * item.price)}
+                      </div>
                     </div>
 
                     {/* Remove */}
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-icon"
-                      onClick={() => removeItem(item.id)}
-                      disabled={items.length <= 1}
-                      style={{ color: "var(--danger)" }}
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="invoice-item-field">
+                      <label className="field-label-mobile">Remove</label>
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-icon"
+                        onClick={() => removeItem(item.id)}
+                        disabled={items.length <= 1}
+                        style={{ color: "var(--danger)" }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Price suggestion */}
@@ -798,14 +803,7 @@ export default function NewInvoicePage() {
               <h3 style={{ fontSize: "0.9375rem", fontWeight: 600, marginBottom: "1rem" }}>
                 Amounts
               </h3>
-              <div
-                className="invoice-amounts-grid"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, 1fr)",
-                  gap: "1rem",
-                }}
-              >
+              <div className="invoice-amounts-grid">
                 <div className="input-group">
                   <label className="input-label">Transport (₹)</label>
                   <input
@@ -844,8 +842,8 @@ export default function NewInvoicePage() {
           </div>
 
           {/* Right Column - Summary */}
-          <div>
-            <div className="card card-gold" style={{ position: "sticky", top: "1.5rem" }}>
+          <div className="stack-card-list">
+            <div className="card card-gold invoice-summary-card">
               <h3 style={{ fontSize: "0.9375rem", fontWeight: 600, marginBottom: "1rem" }}>
                 Invoice Summary
               </h3>
@@ -935,7 +933,7 @@ export default function NewInvoicePage() {
                 type="submit"
                 className="btn btn-primary btn-lg"
                 disabled={saving}
-                style={{ width: "100%", marginTop: "1.5rem" }}
+                style={{ marginTop: "1.5rem" }}
               >
                 {saving ? (
                   <>

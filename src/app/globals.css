@@ -87,6 +87,11 @@ html {
   scroll-behavior: smooth;
 }
 
+html, body {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg-primary);
@@ -94,6 +99,7 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior: none;
 }
 
 /* Scrollbar */
@@ -886,11 +892,11 @@ tr:hover td {
   top: 0;
   left: 0;
   right: 0;
-  height: 60px;
+  height: 56px;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
   z-index: 45;
-  padding: 0 1rem;
+  padding: 0 0.75rem;
   align-items: center;
   justify-content: space-between;
 }

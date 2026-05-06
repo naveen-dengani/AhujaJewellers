@@ -203,21 +203,31 @@ export default function ProductsPage() {
             Manage your product catalog ({products.length} items)
           </p>
         </div>
-        <button className="btn btn-primary" onClick={openCreateModal}>
-          <Plus size={18} />
-          Add Product
-        </button>
+        <div className="header-actions">
+          <button className="btn btn-primary" onClick={openCreateModal}>
+            <Plus size={18} />
+            Add Product
+          </button>
+        </div>
       </div>
 
       {/* Search */}
-      <div className="search-container" style={{ marginBottom: "1rem", maxWidth: "400px" }}>
-        <Search size={16} className="search-icon" />
-        <input
-          className="input"
-          placeholder="Search products..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      <div className="filter-bar" style={{ marginBottom: "1rem" }}>
+        <div className="filter-field">
+          <label className="input-label" htmlFor="product-search">
+            Search
+          </label>
+          <div className="search-container full-width">
+            <Search size={16} className="search-icon" />
+            <input
+              id="product-search"
+              className="input"
+              placeholder="Search products..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Table */}
@@ -251,8 +261,8 @@ export default function ProductsPage() {
           )}
         </div>
       ) : (
-        <div className="table-container">
-          <table>
+        <div className="table-container table-stack">
+          <table className="table-stack">
             <thead>
               <tr>
                 <th>Product Name</th>
@@ -265,14 +275,15 @@ export default function ProductsPage() {
             <tbody>
               {filteredProducts.map((product) => (
                 <tr key={product.id}>
-                  <td style={{ fontWeight: 500 }}>{product.name}</td>
-                  <td>{product.unit || "—"}</td>
-                  <td>
+                  <td data-label="Product Name" style={{ fontWeight: 500 }}>{product.name}</td>
+                  <td data-label="Unit">{product.unit || "—"}</td>
+                  <td data-label="Default Price">
                     <span className="badge badge-gold">
                       {formatCurrency(product.defaultPrice)}
                     </span>
                   </td>
                   <td
+                    data-label="Description"
                     style={{
                       color: "var(--text-muted)",
                       maxWidth: "250px",
@@ -283,8 +294,8 @@ export default function ProductsPage() {
                   >
                     {product.description || "—"}
                   </td>
-                  <td>
-                    <div style={{ display: "flex", gap: "0.25rem" }}>
+                  <td data-label="Actions">
+                    <div className="table-actions">
                       <button
                         className="btn btn-ghost btn-icon"
                         onClick={() => openEditModal(product)}

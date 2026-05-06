@@ -18,10 +18,12 @@ export default async function DashboardPage() {
           <h1 className="page-title">Dashboard</h1>
           <p className="page-subtitle">Welcome back to Ahuja Jewellers</p>
         </div>
-        <Link href="/dashboard/invoices/new" className="btn btn-primary">
-          <Plus size={18} />
-          New Invoice
-        </Link>
+        <div className="header-actions">
+          <Link href="/dashboard/invoices/new" className="btn btn-primary">
+            <Plus size={18} />
+            New Invoice
+          </Link>
+        </div>
       </div>
 
       {/* Stats Grid */}
@@ -73,7 +75,7 @@ export default async function DashboardPage() {
         >
           Quick Actions
         </h2>
-        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+        <div className="quick-actions">
           <Link href="/dashboard/invoices/new" className="btn btn-primary">
             <Plus size={16} />
             Create Invoice

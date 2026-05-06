@@ -48,8 +48,12 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
       <div className="mobile-header">
         <div className="mobile-header-left">
-          <button className="mobile-menu-btn" onClick={toggleSidebar}>
-            {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+          <button 
+            className="mobile-menu-btn" 
+            onClick={toggleSidebar}
+            aria-label={sidebarOpen ? "Close menu" : "Open menu"}
+          >
+            {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
           <img 
             src="/logo.png" 
@@ -60,7 +64,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
               borderRadius: "var(--radius-md)",
               objectFit: "contain",
               background: "white",
-              padding: 2
+              padding: 2,
+              flexShrink: 0
             }} 
           />
           <span className="mobile-brand">Ahuja Jewellers</span>

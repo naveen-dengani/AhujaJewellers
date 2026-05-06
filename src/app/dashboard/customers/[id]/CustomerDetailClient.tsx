@@ -219,35 +219,20 @@ export default function CustomerDetailClient({ customer, balance }: CustomerDeta
                 alignItems: "center",
                 gap: "1rem",
                 marginTop: "0.25rem",
+                flexWrap: "wrap",
               }}
             >
-              <span
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.375rem",
-                  fontSize: "0.875rem",
-                  color: "var(--text-secondary)",
-                }}
-              >
+              <span className="meta-pill">
                 <Phone size={14} /> {customer.phone}
               </span>
               {customer.notes && (
-                <span
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.375rem",
-                    fontSize: "0.875rem",
-                    color: "var(--text-muted)",
-                  }}
-                >
+                <span className="meta-pill muted">
                   <StickyNote size={14} /> {customer.notes}
                 </span>
               )}
             </div>
           </div>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
+          <div className="header-actions">
             <button
               className="btn btn-secondary"
               onClick={handleDownloadPDF}
@@ -351,8 +336,8 @@ export default function CustomerDetailClient({ customer, balance }: CustomerDeta
             </div>
           </div>
         ) : (
-          <div className="table-container">
-            <table>
+          <div className="table-container table-stack">
+            <table className="table-stack">
               <thead>
                 <tr>
                   <th>Invoice #</th>
@@ -367,16 +352,16 @@ export default function CustomerDetailClient({ customer, balance }: CustomerDeta
               <tbody>
                 {balance.invoices.map((invoice) => (
                   <tr key={invoice.id}>
-                    <td style={{ fontWeight: 500 }}>{invoice.invoiceNumber}</td>
-                    <td style={{ color: "var(--text-secondary)" }}>
+                    <td data-label="Invoice #" style={{ fontWeight: 500 }}>{invoice.invoiceNumber}</td>
+                    <td data-label="Date" style={{ color: "var(--text-secondary)" }}>
                       {formatDate(invoice.invoiceDate)}
                     </td>
-                    <td>{formatCurrency(invoice.totalAmount)}</td>
-                    <td style={{ color: "var(--success)" }}>
+                    <td data-label="Total">{formatCurrency(invoice.totalAmount)}</td>
+                    <td data-label="Paid" style={{ color: "var(--success)" }}>
                       {formatCurrency(invoice.amountReceived)}
                     </td>
-                    <td>{formatCurrency(invoice.pendingAmount)}</td>
-                    <td>
+                    <td data-label="Pending">{formatCurrency(invoice.pendingAmount)}</td>
+                    <td data-label="Status">
                       <span
                         className={`badge ${
                           invoice.pendingAmount <= 0
@@ -387,13 +372,15 @@ export default function CustomerDetailClient({ customer, balance }: CustomerDeta
                         {invoice.pendingAmount <= 0 ? "Paid" : "Pending"}
                       </span>
                     </td>
-                    <td>
-                      <Link
-                        href={`/dashboard/invoices/${invoice.id}`}
-                        className="btn btn-ghost btn-sm"
-                      >
-                        View
-                      </Link>
+                    <td data-label="Actions">
+                      <div className="table-actions">
+                        <Link
+                          href={`/dashboard/invoices/${invoice.id}`}
+                          className="btn btn-ghost btn-sm"
+                        >
+                          View
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -415,8 +402,8 @@ export default function CustomerDetailClient({ customer, balance }: CustomerDeta
           >
             Payment History ({payments.length})
           </h2>
-          <div className="table-container">
-            <table>
+          <div className="table-container table-stack">
+            <table className="table-stack">
               <thead>
                 <tr>
                   <th>Date</th>
@@ -430,14 +417,14 @@ export default function CustomerDetailClient({ customer, balance }: CustomerDeta
               <tbody>
                 {payments.map((payment) => (
                   <tr key={payment.id}>
-                    <td style={{ color: "var(--text-secondary)" }}>
+                    <td data-label="Date" style={{ color: "var(--text-secondary)" }}>
                       {formatDate(payment.paymentDate)}
                     </td>
-                    <td style={{ fontWeight: 500, color: "var(--success)" }}>
+                    <td data-label="Amount" style={{ fontWeight: 500, color: "var(--success)" }}>
                       {formatCurrency(payment.amount)}
                     </td>
-                    <td style={{ textTransform: "capitalize" }}>{payment.paymentMode}</td>
-                    <td>
+                    <td data-label="Mode" style={{ textTransform: "capitalize" }}>{payment.paymentMode}</td>
+                    <td data-label="Invoice">
                       {payment.invoice ? (
                         <Link
                           href={`/dashboard/invoices/${payment.invoice.invoiceNumber}`}
@@ -449,18 +436,20 @@ export default function CustomerDetailClient({ customer, balance }: CustomerDeta
                         <span style={{ color: "var(--text-muted)" }}>—</span>
                       )}
                     </td>
-                    <td style={{ color: "var(--text-muted)", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <td data-label="Notes" style={{ color: "var(--text-muted)", maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {payment.notes || "—"}
                     </td>
-                    <td>
-                      <button
-                        className="btn btn-ghost btn-icon"
-                        onClick={() => handleDeletePayment(payment.id)}
-                        style={{ color: "var(--danger)", width: "32px", height: "32px" }}
-                        title="Delete payment"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                    <td data-label="Actions">
+                      <div className="table-actions">
+                        <button
+                          className="btn btn-ghost btn-icon"
+                          onClick={() => handleDeletePayment(payment.id)}
+                          style={{ color: "var(--danger)", width: "32px", height: "32px" }}
+                          title="Delete payment"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -571,7 +560,7 @@ export default function CustomerDetailClient({ customer, balance }: CustomerDeta
 
                 <div className="input-group">
                   <label className="input-label">Payment Mode *</label>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.5rem" }}>
+                  <div className="payment-mode-grid">
                     {paymentModes.map((mode) => {
                       const Icon = mode.icon;
                       return (

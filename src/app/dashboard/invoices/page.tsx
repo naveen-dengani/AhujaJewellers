@@ -91,46 +91,63 @@ export default function InvoicesPage() {
             Manage all invoices ({invoices.length} total)
           </p>
         </div>
-        <Link href="/dashboard/invoices/new" className="btn btn-primary">
-          <Plus size={18} />
-          New Invoice
-        </Link>
+        <div className="header-actions">
+          <Link href="/dashboard/invoices/new" className="btn btn-primary">
+            <Plus size={18} />
+            New Invoice
+          </Link>
+        </div>
       </div>
 
       {/* Filters */}
-      <div
-        style={{
-          display: "flex",
-          gap: "0.75rem",
-          marginBottom: "1rem",
-          flexWrap: "wrap",
-        }}
-      >
-        <div className="search-container" style={{ flex: "1", minWidth: "250px", maxWidth: "400px" }}>
-          <Search size={16} className="search-icon" />
-          <input
-            className="input"
-            placeholder="Search by invoice # or customer..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      <div className="filter-bar">
+        <div className="filter-field">
+          <label className="input-label" htmlFor="invoice-search">
+            Search
+          </label>
+          <div className="search-container full-width">
+            <Search size={16} className="search-icon" />
+            <input
+              id="invoice-search"
+              className="input"
+              placeholder="Search by invoice # or customer..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <Filter size={16} style={{ color: "var(--text-muted)" }} />
-          <select
-            className="input"
-            value={filterCustomer}
-            onChange={(e) => setFilterCustomer(e.target.value)}
-            style={{ width: "200px" }}
-          >
-            <option value="">All Customers</option>
-            {customers.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+        <div className="filter-field">
+          <label className="input-label" htmlFor="invoice-customer-filter">
+            Customer Filter
+          </label>
+          <div style={{ position: "relative" }}>
+            <Filter
+              size={16}
+              style={{
+                position: "absolute",
+                left: "0.75rem",
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "var(--text-muted)",
+                pointerEvents: "none",
+              }}
+            />
+            <select
+              id="invoice-customer-filter"
+              className="input"
+              value={filterCustomer}
+              onChange={(e) => setFilterCustomer(e.target.value)}
+              style={{ paddingLeft: "2.5rem" }}
+            >
+              <option value="">All Customers</option>
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -167,8 +184,8 @@ export default function InvoicesPage() {
           )}
         </div>
       ) : (
-        <div className="table-container">
-          <table>
+        <div className="table-container table-stack">
+          <table className="table-stack">
             <thead>
               <tr>
                 <th>Invoice #</th>
@@ -184,19 +201,19 @@ export default function InvoicesPage() {
             <tbody>
               {filteredInvoices.map((invoice) => (
                 <tr key={invoice.id}>
-                  <td style={{ fontWeight: 500 }}>
+                  <td data-label="Invoice #" style={{ fontWeight: 500 }}>
                     {invoice.invoiceNumber}
                   </td>
-                  <td style={{ color: "var(--text-secondary)" }}>
+                  <td data-label="Date" style={{ color: "var(--text-secondary)" }}>
                     {formatDate(invoice.invoiceDate)}
                   </td>
-                  <td>{invoice.customer.name}</td>
-                  <td>{formatCurrency(invoice.totalAmount)}</td>
-                  <td style={{ color: "var(--success)" }}>
+                  <td data-label="Customer">{invoice.customer.name}</td>
+                  <td data-label="Total">{formatCurrency(invoice.totalAmount)}</td>
+                  <td data-label="Paid" style={{ color: "var(--success)" }}>
                     {formatCurrency(invoice.amountReceived)}
                   </td>
-                  <td>{formatCurrency(invoice.pendingAmount)}</td>
-                  <td>
+                  <td data-label="Pending">{formatCurrency(invoice.pendingAmount)}</td>
+                  <td data-label="Status">
                     <span
                       className={`badge ${
                         invoice.pendingAmount <= 0
@@ -207,8 +224,8 @@ export default function InvoicesPage() {
                       {invoice.pendingAmount <= 0 ? "Paid" : "Pending"}
                     </span>
                   </td>
-                  <td>
-                    <div style={{ display: "flex", gap: "0.25rem" }}>
+                  <td data-label="Actions">
+                    <div className="table-actions">
                       <Link
                         href={`/dashboard/invoices/${invoice.id}`}
                         className="btn btn-ghost btn-icon"
