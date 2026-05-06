@@ -14,8 +14,7 @@ export default async function DashboardPage() {
 
   // Single optimized query to get all dashboard stats
   const [stats, recentInvoices] = await Promise.all([
-    prisma.user.findUnique({
-      where: { email: session.user.email },
+    prisma.user.findFirst({
       select: {
         _count: { select: { customers: true } },
         invoices: {
@@ -28,7 +27,6 @@ export default async function DashboardPage() {
       },
     }),
     prisma.invoice.findMany({
-      where: { user: { email: session.user.email } },
       orderBy: { createdAt: "desc" },
       take: 5,
       include: { customer: true },

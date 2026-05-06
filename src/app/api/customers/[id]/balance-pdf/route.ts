@@ -9,16 +9,14 @@ export async function GET(
 ) {
   try {
     const session = await auth();
-    const userId = session?.user?.id;
-
-    if (!userId) {
+    if (!session) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
     const { id } = await params;
 
-    const customer = await prisma.customer.findFirst({
-      where: { id, userId },
+    const customer = await prisma.customer.findUnique({
+      where: { id },
     });
 
     if (!customer) {
@@ -26,7 +24,7 @@ export async function GET(
     }
 
     const invoices = await prisma.invoice.findMany({
-      where: { customerId: id, userId },
+      where: { customerId: id },
       orderBy: { invoiceDate: "desc" },
     });
 

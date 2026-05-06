@@ -7,16 +7,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  const userId = session?.user?.id;
-
-  if (!userId) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
 
-  const customer = await prisma.customer.findFirst({
-    where: { id, userId },
+  const customer = await prisma.customer.findUnique({
+    where: { id },
   });
 
   if (!customer) {

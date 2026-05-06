@@ -4,14 +4,11 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   const session = await auth();
-  const userId = session?.user?.id;
-
-  if (!userId) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const invoices = await prisma.invoice.findMany({
-    where: { userId },
     include: { customer: true },
     orderBy: { createdAt: "desc" },
   });
@@ -21,9 +18,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const session = await auth();
-  const userId = session?.user?.id;
-
-  if (!userId) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -44,6 +39,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
+  const user = await prisma.user.findFirst();
+  if (!user) {
+    return NextResponse.json({ error: "No user found" }, { status: 500 });
+  }
+
   const invoice = await prisma.$transaction(async (tx) => {
     const productMap = new Map();
     
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
             name: item.productName,
             unit: item.unit || null,
             defaultPrice: item.price,
-            userId,
+            userId: user.id,
           },
         });
         productMap.set(item.productId, product.id);
@@ -67,13 +67,13 @@ export async function POST(request: Request) {
       data: {
         invoiceNumber,
         customerId,
-        userId,
         invoiceDate: new Date(invoiceDate),
         transportAmount: transportAmount || 0,
         taxAmount: taxAmount || 0,
         totalAmount,
         amountReceived: amountReceived || 0,
         pendingAmount,
+        userId: user.id,
         items: {
           create: items.map((item: any) => ({
             productId: productMap.get(item.productId),

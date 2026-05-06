@@ -4,9 +4,7 @@ import { NextResponse } from "next/server";
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  const userId = session?.user?.id;
-
-  if (!userId) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -14,8 +12,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   const body = await request.json();
   const { name, unit, defaultPrice, description } = body;
 
-  const product = await prisma.product.findFirst({
-    where: { id, userId },
+  const product = await prisma.product.findUnique({
+    where: { id },
   });
 
   if (!product) {
@@ -37,16 +35,14 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  const userId = session?.user?.id;
-
-  if (!userId) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
 
-  const product = await prisma.product.findFirst({
-    where: { id, userId },
+  const product = await prisma.product.findUnique({
+    where: { id },
   });
 
   if (!product) {

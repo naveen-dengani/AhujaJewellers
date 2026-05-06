@@ -4,14 +4,11 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   const session = await auth();
-  const userId = session?.user?.id;
-
-  if (!userId) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const products = await prisma.product.findMany({
-    where: { userId },
     orderBy: { name: "asc" },
   });
 
@@ -20,9 +17,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const session = await auth();
-  const userId = session?.user?.id;
-
-  if (!userId) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -34,11 +29,16 @@ export async function POST(request: Request) {
   }
 
   const existing = await prisma.product.findFirst({
-    where: { name: { equals: name, mode: "insensitive" }, userId },
+    where: { name: { equals: name, mode: "insensitive" } },
   });
 
   if (existing) {
     return NextResponse.json({ error: "Product already exists" }, { status: 400 });
+  }
+
+  const user = await prisma.user.findFirst();
+  if (!user) {
+    return NextResponse.json({ error: "No user found" }, { status: 500 });
   }
 
   const product = await prisma.product.create({
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
       unit: unit || null,
       defaultPrice: defaultPrice || 0,
       description: description || null,
-      userId,
+      userId: user.id,
     },
   });
 

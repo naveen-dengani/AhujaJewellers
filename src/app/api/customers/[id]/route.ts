@@ -4,16 +4,14 @@ import { NextResponse } from "next/server";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  const userId = session?.user?.id;
-
-  if (!userId) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
 
-  const customer = await prisma.customer.findFirst({
-    where: { id, userId },
+  const customer = await prisma.customer.findUnique({
+    where: { id },
   });
 
   if (!customer) {
@@ -25,9 +23,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  const userId = session?.user?.id;
-
-  if (!userId) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -35,8 +31,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   const body = await request.json();
   const { name, phone, notes } = body;
 
-  const customer = await prisma.customer.findFirst({
-    where: { id, userId },
+  const customer = await prisma.customer.findUnique({
+    where: { id },
   });
 
   if (!customer) {
@@ -57,16 +53,14 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
-  const userId = session?.user?.id;
-
-  if (!userId) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
 
-  const customer = await prisma.customer.findFirst({
-    where: { id, userId },
+  const customer = await prisma.customer.findUnique({
+    where: { id },
   });
 
   if (!customer) {
