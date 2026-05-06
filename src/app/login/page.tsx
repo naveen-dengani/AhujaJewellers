@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+
+export const dynamic = "force-dynamic";
 
 const ALLOWED_EMAILS = [
   "naveen.dengani@gmail.com",
@@ -19,45 +21,37 @@ async function verifyPasskey(email: string, action: string, credential: Credenti
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [logoUrl, setLogoUrl] = useState("/logo.png");
+
+  useEffect(() => {
+    setLogoUrl(`${window.location.origin}/logo.png`);
+  }, []);
 
   const handlePasskeyLogin = async () => {
-    if (!email) {
-      setError("Please enter your email first");
-      return;
-    }
-
-    const normalizedEmail = email.toLowerCase();
-    if (!ALLOWED_EMAILS.includes(normalizedEmail)) {
-      setError("Email not allowed");
-      return;
-    }
-
     setError("");
     setLoading(true);
 
     try {
-      // First get the user to see their registered credentials
+      // Get all registered credentials from DB
       const userCheck = await fetch("/api/passkey", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: normalizedEmail, action: "get-credentials" }),
+        body: JSON.stringify({ action: "get-all-credentials" }),
       });
       const userData = await userCheck.json();
 
-      const allowCredentials = userData.credentials?.length > 0 
-        ? userData.credentials.map((c: { credentialId: string }) => ({ 
-            type: "public-key", 
-            id: c.credentialId 
-          }))
-        : [];
+      if (!userData.credentials?.length) {
+        setError("No passkeys found. Please register first.");
+        setLoading(false);
+        return;
+      }
 
+      // Let browser prompt for any registered credential
       const credential = await navigator.credentials.get({
         publicKey: {
           challenge: crypto.getRandomValues(new Uint8Array(32)),
-          allowCredentials: allowCredentials.length > 0 ? allowCredentials : [],
           userVerification: "preferred",
         },
       });
@@ -68,12 +62,22 @@ export default function LoginPage() {
         return;
       }
 
-      const verifyRes = await verifyPasskey(normalizedEmail, "authenticate", credential);
+      // Verify by credential ID
+      const verifyRes = await fetch("/api/passkey/verify-by-credential", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          action: "authenticate", 
+          credentialId: credential.id 
+        }),
+      });
       
-      if (verifyRes.success) {
+      const result = await verifyRes.json();
+
+      if (result.success) {
         router.push("/dashboard");
       } else {
-        setError(verifyRes.error || "Authentication failed");
+        setError(result.error || "Authentication failed");
       }
     } catch (err: unknown) {
       const errorObj = err as Error;
@@ -88,20 +92,25 @@ export default function LoginPage() {
   };
 
   const handleRegister = async () => {
-    if (!email) {
-      setError("Please enter your email first");
-      return;
-    }
+    // Get any existing credentials to check if already registered
+    const userCheck = await fetch("/api/passkey", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "get-all-credentials" }),
+    });
+    const userData = await userCheck.json();
 
-    const normalizedEmail = email.toLowerCase();
-    if (!ALLOWED_EMAILS.includes(normalizedEmail)) {
-      setError("Email not allowed");
+    if (userData.credentials?.length > 0) {
+      setError("Passkey already registered. Please use Sign in with Passkey.");
       return;
     }
 
     const rpId = window.location.hostname;
     const isLocalhost = rpId === "localhost" || rpId.includes("127.0.0.1");
     const rpName = isLocalhost ? "Ahuja Jewellers (Dev)" : "Ahuja Jewellers";
+
+    // Hardcoded first allowed email for registration
+    const email = ALLOWED_EMAILS[0];
 
     setError("");
     setLoading(true);
@@ -112,9 +121,9 @@ export default function LoginPage() {
           challenge: crypto.getRandomValues(new Uint8Array(32)),
           rp: { name: rpName, id: rpId },
           user: { 
-            id: new TextEncoder().encode(normalizedEmail), 
-            name: normalizedEmail,
-            displayName: normalizedEmail.split("@")[0]
+            id: new TextEncoder().encode(email), 
+            name: email,
+            displayName: email.split("@")[0]
           },
           pubKeyCredParams: [
             { type: "public-key", alg: -7 },
@@ -129,7 +138,7 @@ export default function LoginPage() {
         return;
       }
 
-      const verifyRes = await verifyPasskey(normalizedEmail, "register", credential);
+      const verifyRes = await verifyPasskey(email, "register", credential);
 
       if (verifyRes.success) {
         alert("Passkey registered! You can now sign in with passkey.");
@@ -150,39 +159,90 @@ export default function LoginPage() {
 
   return (
     <div className="login-container">
-      <div className="login-bg-effect" style={{ background: "var(--primary)", top: "-100px", right: "-100px" }} />
-      <div className="login-bg-effect" style={{ background: "var(--primary-dark)", bottom: "-150px", left: "-100px", width: 300, height: 300 }} />
-
       <div className="login-card">
-        <img src="/logo.png" alt="Ahuja Jewellers" style={{ width: 72, height: 72, borderRadius: "var(--radius-lg)", objectFit: "contain", margin: "0 auto 1.5rem", background: "white", padding: 8 }} />
-        <h1 className="login-title">Ahuja Jewellers</h1>
+        <div className="login-logo">
+          <img src={logoUrl} alt="Ahuja" className="login-logo-img" />
+        </div>
         <p className="login-subtitle">Sign in with passkey</p>
 
         {error && (
-          <div style={{ background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.2)", borderRadius: "var(--radius-md)", padding: "0.75rem", color: "var(--danger)", fontSize: "0.875rem", textAlign: "center" }}>
+          <div className="login-error">
             {error}
           </div>
         )}
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <div className="input-group">
-            <label className="input-label" htmlFor="email">Email</label>
-            <input id="email" type="email" className="input" placeholder="email id" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
-          </div>
-
-          <button type="button" className="btn btn-primary btn-lg" onClick={handlePasskeyLogin} disabled={loading} style={{ width: "100%" }}>
-            {loading ? <div className="spinner" /> : "Sign in with Passkey"}
+        <div style={{ display: "flex", flexDirection: "column", gap: "1rem", marginTop: "24px" }}>
+          <button 
+            type="button"
+            className="btn btn-primary btn-lg" 
+            onClick={handlePasskeyLogin}
+            disabled={loading}
+            style={{ width: "100%" }}
+          >
+            {loading ? "Loading..." : "Sign in with Passkey"}
           </button>
 
-          <button type="button" className="btn btn-secondary" onClick={handleRegister} disabled={loading} style={{ width: "100%" }}>
-            {loading ? <div className="spinner" /> : "Register New Passkey"}
+          <button 
+            type="button"
+            className="btn btn-secondary" 
+            onClick={handleRegister}
+            disabled={loading}
+            style={{ width: "100%" }}
+          >
+            {loading ? "Loading..." : "Register New Passkey"}
           </button>
         </div>
-
-        <p style={{ textAlign: "center", fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "1.5rem" }}>
-          
-        </p>
       </div>
+
+      <style jsx>{`
+        .login-container {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+          background: var(--bg-base);
+        }
+        .login-card {
+          background: var(--bg-card);
+          border-radius: 16px;
+          padding: 32px;
+          width: 100%;
+          max-width: 400px;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .login-logo {
+          width: 80px;
+          height: 80px;
+          margin: 0 auto 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .login-logo-img {
+          width: 100%;
+          height: auto;
+        }
+        .login-subtitle {
+          text-align: center;
+          color: var(--text-muted);
+          margin-bottom: 24px;
+        }
+        .login-error {
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.2);
+          border-radius: 8px;
+          padding: 12px;
+          color: var(--danger);
+          font-size: 0.875rem;
+          text-align: center;
+          margin-bottom: 16px;
+        }
+        .btn-lg {
+          padding: 14px;
+          font-size: 1rem;
+        }
+      `}</style>
     </div>
   );
 }

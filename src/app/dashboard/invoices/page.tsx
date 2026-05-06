@@ -1,292 +1,129 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { getInvoices, deleteInvoice } from "@/actions/invoices";
-import { getCustomers } from "@/actions/customers";
+import { useState, useEffect } from "react";
+import { Plus, Search, FileText, Eye, Trash2, MoreVertical } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import {
-  Plus,
-  Search,
-  Eye,
-  Trash2,
-  FileText,
-  AlertTriangle,
-  Filter,
-} from "lucide-react";
 import Link from "next/link";
 
-type Invoice = {
+interface Invoice {
   id: string;
   invoiceNumber: string;
-  invoiceDate: Date;
+  customerId: string;
+  customer: { name: string };
+  invoiceDate: string;
   totalAmount: number;
-  amountReceived: number;
   pendingAmount: number;
-  customer: { name: string; phone: string };
-};
-
-type Customer = {
-  id: string;
-  name: string;
-};
+}
 
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [search, setSearch] = useState("");
-  const [filterCustomer, setFilterCustomer] = useState("");
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deletingInvoice, setDeletingInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
 
-  const loadData = useCallback(async () => {
+  useEffect(() => {
+    fetchInvoices();
+  }, []);
+
+  const fetchInvoices = async () => {
     try {
-      const [invoiceData, customerData] = await Promise.all([
-        getInvoices(filterCustomer ? { customerId: filterCustomer } : undefined),
-        getCustomers(),
-      ]);
-      setInvoices(invoiceData as Invoice[]);
-      setCustomers(
-        customerData.map((c) => ({ id: c.id, name: c.name }))
-      );
-    } catch {
-      console.error("Failed to load data");
+      const res = await fetch("/api/invoices");
+      const data = await res.json();
+      setInvoices(data);
+    } catch (err) {
+      console.error("Failed to fetch invoices", err);
     } finally {
       setLoading(false);
     }
-  }, [filterCustomer]);
+  };
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  const filteredInvoices = invoices.filter(
-    (inv) =>
-      inv.invoiceNumber.toLowerCase().includes(search.toLowerCase()) ||
-      inv.customer.name.toLowerCase().includes(search.toLowerCase())
+  const filteredInvoices = invoices.filter(i => 
+    i.invoiceNumber.toLowerCase().includes(search.toLowerCase()) ||
+    i.customer.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleDelete = async () => {
-    if (!deletingInvoice) return;
-    setSaving(true);
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this invoice?")) return;
+    
     try {
-      await deleteInvoice(deletingInvoice.id);
-      setShowDeleteModal(false);
-      setDeletingInvoice(null);
-      await loadData();
-    } catch {
-      console.error("Failed to delete");
-    } finally {
-      setSaving(false);
+      await fetch(`/api/invoices/${id}`, { method: "DELETE" });
+      fetchInvoices();
+    } catch (err) {
+      console.error("Failed to delete", err);
     }
   };
 
   return (
     <div>
       <div className="page-header">
-        <div>
-          <h1 className="page-title">Invoices</h1>
-          <p className="page-subtitle">
-            Manage all invoices ({invoices.length} total)
-          </p>
-        </div>
-        <div className="header-actions">
-          <Link href="/dashboard/invoices/new" className="btn btn-primary">
-            <Plus size={18} />
-            New Invoice
-          </Link>
-        </div>
+        <h1 className="page-title">Invoices</h1>
       </div>
 
-      {/* Filters */}
-      <div className="filter-bar">
-        <div className="filter-field">
-          <label className="input-label" htmlFor="invoice-search">
-            Search
-          </label>
-          <div className="search-container full-width">
-            <Search size={16} className="search-icon" />
-            <input
-              id="invoice-search"
-              className="input"
-              placeholder="Search by invoice # or customer..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+      {/* Search & Add */}
+      <div className="flex gap-2 mb-4">
+        <div className="search-box">
+          <Search size={18} className="search-icon" />
+          <input
+            type="text"
+            className="form-input search-input"
+            placeholder="Search invoices..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
-
-        <div className="filter-field">
-          <label className="input-label" htmlFor="invoice-customer-filter">
-            Customer Filter
-          </label>
-          <div style={{ position: "relative" }}>
-            <Filter
-              size={16}
-              style={{
-                position: "absolute",
-                left: "0.75rem",
-                top: "50%",
-                transform: "translateY(-50%)",
-                color: "var(--text-muted)",
-                pointerEvents: "none",
-              }}
-            />
-            <select
-              id="invoice-customer-filter"
-              className="input"
-              value={filterCustomer}
-              onChange={(e) => setFilterCustomer(e.target.value)}
-              style={{ paddingLeft: "2.5rem" }}
-            >
-              <option value="">All Customers</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+        <Link href="/dashboard/invoices/new" className="btn btn-primary">
+          <Plus size={18} />
+        </Link>
       </div>
 
-      {/* Table */}
+      {/* Invoice List */}
       {loading ? (
-        <div className="card" style={{ textAlign: "center", padding: "3rem" }}>
-          <div className="spinner" style={{ margin: "0 auto", borderTopColor: "var(--primary)" }} />
-          <p style={{ marginTop: "1rem", color: "var(--text-muted)" }}>Loading invoices...</p>
-        </div>
+        <div className="loading">Loading...</div>
       ) : filteredInvoices.length === 0 ? (
-        <div className="card empty-state">
-          <div className="empty-icon">
-            <FileText size={28} />
-          </div>
-          <div className="empty-title">
-            {search || filterCustomer
-              ? "No invoices found"
-              : "No invoices yet"}
-          </div>
-          <div className="empty-description">
-            {search || filterCustomer
-              ? "Try different filters"
-              : "Create your first invoice to get started"}
-          </div>
-          {!search && !filterCustomer && (
-            <Link
-              href="/dashboard/invoices/new"
-              className="btn btn-primary"
-              style={{ marginTop: "1rem" }}
-            >
-              <Plus size={16} />
-              Create Invoice
-            </Link>
-          )}
+        <div className="empty-state">
+          <FileText size={48} />
+          <p className="empty-title">No invoices found</p>
         </div>
       ) : (
-        <div className="table-container table-stack">
-          <table className="table-stack">
-            <thead>
-              <tr>
-                <th>Invoice #</th>
-                <th>Date</th>
-                <th>Customer</th>
-                <th>Total</th>
-                <th>Paid</th>
-                <th>Pending</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredInvoices.map((invoice) => (
-                <tr key={invoice.id}>
-                  <td data-label="Invoice #" style={{ fontWeight: 500 }}>
-                    {invoice.invoiceNumber}
-                  </td>
-                  <td data-label="Date" style={{ color: "var(--text-secondary)" }}>
-                    {formatDate(invoice.invoiceDate)}
-                  </td>
-                  <td data-label="Customer">{invoice.customer.name}</td>
-                  <td data-label="Total">{formatCurrency(invoice.totalAmount)}</td>
-                  <td data-label="Paid" style={{ color: "var(--success)" }}>
-                    {formatCurrency(invoice.amountReceived)}
-                  </td>
-                  <td data-label="Pending">{formatCurrency(invoice.pendingAmount)}</td>
-                  <td data-label="Status">
-                    <span
-                      className={`badge ${
-                        invoice.pendingAmount <= 0
-                          ? "badge-success"
-                          : "badge-danger"
-                      }`}
-                    >
-                      {invoice.pendingAmount <= 0 ? "Paid" : "Pending"}
-                    </span>
-                  </td>
-                  <td data-label="Actions">
-                    <div className="table-actions">
-                      <Link
-                        href={`/dashboard/invoices/${invoice.id}`}
-                        className="btn btn-ghost btn-icon"
-                        title="View"
-                      >
-                        <Eye size={16} />
-                      </Link>
-                      <button
-                        className="btn btn-ghost btn-icon"
-                        onClick={() => {
-                          setDeletingInvoice(invoice);
-                          setShowDeleteModal(true);
-                        }}
-                        title="Delete"
-                        style={{ color: "var(--danger)" }}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="card">
+          {filteredInvoices.map((invoice) => (
+            <Link 
+              key={invoice.id} 
+              href={`/dashboard/invoices/${invoice.id}`}
+              className="invoice-item"
+            >
+              <div className="invoice-info">
+                <div className="invoice-number">{invoice.invoiceNumber}</div>
+                <div className="invoice-customer">{invoice.customer.name}</div>
+                <div className="invoice-date">{formatDate(invoice.invoiceDate)}</div>
+              </div>
+              <div className="invoice-amounts">
+                <div className="invoice-total">{formatCurrency(invoice.totalAmount)}</div>
+                <span className={`badge ${invoice.pendingAmount > 0 ? "badge-warning" : "badge-success"}`}>
+                  {invoice.pendingAmount > 0 ? formatCurrency(invoice.pendingAmount) : "Paid"}
+                </span>
+              </div>
+            </Link>
+          ))}
         </div>
       )}
 
-      {/* Delete Confirmation */}
-      {showDeleteModal && deletingInvoice && (
-        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
-          <div
-            className="modal-content confirm-dialog"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="confirm-icon">
-              <AlertTriangle size={28} />
-            </div>
-            <h3 className="confirm-title">Delete Invoice</h3>
-            <p className="confirm-text">
-              Are you sure you want to delete invoice{" "}
-              <strong>{deletingInvoice.invoiceNumber}</strong>? This action
-              cannot be undone.
-            </p>
-            <div className="confirm-actions">
-              <button
-                className="btn btn-secondary"
-                onClick={() => setShowDeleteModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn btn-danger"
-                onClick={handleDelete}
-                disabled={saving}
-              >
-                {saving ? <div className="spinner" /> : "Delete"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <style jsx>{`
+        .flex { display: flex; }
+        .gap-2 { gap: 8px; }
+        .mb-4 { margin-bottom: 16px; }
+        .search-box { flex: 1; position: relative; }
+        .search-input { padding-left: 40px; }
+        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+        .invoice-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border); text-decoration: none; color: inherit; }
+        .invoice-item:last-child { border-bottom: none; }
+        .invoice-item:hover { background: var(--bg-base); margin: 0 -8px; padding: 14px 8px; border-radius: 8px; }
+        .invoice-number { font-weight: 600; font-size: 1rem; }
+        .invoice-customer { font-size: 0.875rem; color: var(--text-muted); margin-top: 2px; }
+        .invoice-date { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+        .invoice-amounts { text-align: right; }
+        .invoice-total { font-weight: 600; font-size: 1rem; }
+        .loading { text-align: center; padding: 40px; color: var(--text-muted); }
+      `}</style>
     </div>
   );
 }

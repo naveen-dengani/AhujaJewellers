@@ -11,6 +11,29 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { email, action } = body;
 
+    // Handle get-all-credentials action
+    if (action === "get-all-credentials") {
+      const allCredentials = await prisma.passkeyCredential.findMany({
+        select: {
+          credentialId: true,
+          user: {
+            select: {
+              email: true,
+            },
+          },
+        },
+      });
+      
+      const credentials = allCredentials
+        .filter(c => ALLOWED_EMAILS.includes(c.user.email.toLowerCase()))
+        .map(c => ({
+          credentialId: c.credentialId,
+          email: c.user.email,
+        }));
+      
+      return NextResponse.json({ credentials });
+    }
+
     if (!email || !ALLOWED_EMAILS.includes(email.toLowerCase())) {
       return NextResponse.json({ error: "Invalid email" }, { status: 400 });
     }

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
 type Theme = "light" | "dark";
 
@@ -11,7 +11,19 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
+interface ThemeProviderProps {
+  children: ReactNode;
+  attribute?: string;
+  defaultTheme?: string;
+  enableSystem?: boolean;
+}
+
+export function ThemeProvider({ 
+  children, 
+  attribute = "class", 
+  defaultTheme = "system", 
+  enableSystem = true 
+}: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>("dark");
   const [mounted, setMounted] = useState(false);
 
@@ -19,18 +31,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const stored = localStorage.getItem("theme") as Theme | null;
     if (stored) {
       setTheme(stored);
-      document.documentElement.setAttribute("data-theme", stored);
+      document.documentElement.setAttribute(attribute, stored);
     } else {
-      document.documentElement.setAttribute("data-theme", "dark");
+      document.documentElement.setAttribute(attribute, "dark");
     }
     setMounted(true);
-  }, []);
+  }, [attribute]);
 
   const toggleTheme = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
     setTheme(newTheme);
     localStorage.setItem("theme", newTheme);
-    document.documentElement.setAttribute("data-theme", newTheme);
+    document.documentElement.setAttribute(attribute, newTheme);
   };
 
   if (!mounted) {

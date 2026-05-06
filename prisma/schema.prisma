@@ -92,14 +92,14 @@ model Invoice {
 model InvoiceItem {
   id          String  @id @default(cuid())
   invoiceId   String
-  productId   String
+  productId   String?
   productName String
   unit        String?
   quantity    Float
   price       Float
   subtotal    Float
   invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  product     Product @relation(fields: [productId], references: [id])
+  product     Product? @relation(fields: [productId], references: [id])
 
   @@index([invoiceId])
   @@index([productId])

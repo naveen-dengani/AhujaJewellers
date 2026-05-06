@@ -1,462 +1,233 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import {
-  getProducts,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-} from "@/actions/products";
-import { formatCurrency, type SimilarProduct } from "@/lib/utils";
-import {
-  Plus,
-  Search,
-  Edit2,
-  Trash2,
-  X,
-  Package,
-  AlertTriangle,
-  AlertCircle,
-} from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Search, Package, Edit, Trash2, X, AlertTriangle } from "lucide-react";
+import { calculateSimilarity } from "@/lib/utils";
 
-type Product = {
+interface Product {
   id: string;
   name: string;
   unit: string | null;
   defaultPrice: number;
   description: string | null;
-  createdAt: Date;
-};
+}
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showSimilarModal, setShowSimilarModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({ name: "", unit: "", defaultPrice: "", description: "" });
   const [saving, setSaving] = useState(false);
+  const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
 
-  // Form state
-  const [name, setName] = useState("");
-  const [unit, setUnit] = useState("");
-  const [customUnit, setCustomUnit] = useState("");
-  const [defaultPrice, setDefaultPrice] = useState("");
-  const [description, setDescription] = useState("");
-  const [formError, setFormError] = useState("");
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
-  const PREDEFINED_UNITS = ["piece", "line", "dozen", "kg"];
-
-  // Similar products state
-  const [similarProducts, setSimilarProducts] = useState<SimilarProduct[]>([]);
-  const [pendingProductData, setPendingProductData] = useState<{
-    name: string;
-    unit: string | undefined;
-    defaultPrice: number | string;
-    description: string | undefined;
-  } | null>(null);
-
-  const loadProducts = useCallback(async () => {
+  const fetchProducts = async () => {
     try {
-      const data = await getProducts();
-      setProducts(data as Product[]);
-    } catch {
-      console.error("Failed to load products");
+      const res = await fetch("/api/products");
+      const data = await res.json();
+      setProducts(data);
+    } catch (err) {
+      console.error("Failed to fetch products", err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  useEffect(() => {
-    loadProducts();
-  }, [loadProducts]);
-
-  const filteredProducts = products.filter((p) =>
+  const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const openCreateModal = () => {
-    setEditingProduct(null);
-    setName("");
-    setUnit("");
-    setCustomUnit("");
-    setDefaultPrice("");
-    setDescription("");
-    setFormError("");
-    setShowModal(true);
-  };
-
-  const openEditModal = (product: Product) => {
-    setEditingProduct(product);
-    setName(product.name);
-    const isCustom = product.unit && !PREDEFINED_UNITS.includes(product.unit);
-    setUnit(isCustom ? "custom" : (product.unit || ""));
-    setCustomUnit(isCustom ? (product.unit || "") : "");
-    setDefaultPrice(product.defaultPrice.toString());
-    setDescription(product.description || "");
-    setFormError("");
-    setShowModal(true);
-  };
+  // Check for similar products when name changes
+  useEffect(() => {
+    if (formData.name && !editingProduct) {
+      const similar = products.filter(p => 
+        calculateSimilarity(formData.name, p.name) >= 75
+      );
+      setSimilarProducts(similar);
+    } else {
+      setSimilarProducts([]);
+    }
+  }, [formData.name, products, editingProduct]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormError("");
     setSaving(true);
 
     try {
-      const finalUnit = unit === "custom" ? customUnit : (unit || undefined);
-      const data = {
-        name,
-        unit: finalUnit,
-        defaultPrice: parseFloat(defaultPrice) || 0,
-        description: description || undefined,
-      };
+      const url = editingProduct ? `/api/products/${editingProduct.id}` : "/api/products";
+      const method = editingProduct ? "PUT" : "POST";
+      
+      await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          unit: formData.unit || null,
+          defaultPrice: parseFloat(formData.defaultPrice) || 0,
+          description: formData.description || null,
+        }),
+      });
 
-      if (editingProduct) {
-        await updateProduct(editingProduct.id, data);
-        setShowModal(false);
-        await loadProducts();
-      } else {
-        const result = await createProduct(data);
-
-        if (result.similarProducts && result.similarProducts.length > 0) {
-          setSimilarProducts(result.similarProducts);
-          setPendingProductData({
-            name: data.name,
-            unit: data.unit,
-            defaultPrice: data.defaultPrice,
-            description: data.description,
-          });
-          setShowSimilarModal(true);
-        } else {
-          setShowModal(false);
-          await loadProducts();
-        }
-      }
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Failed to save product";
-      setFormError(message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleAddDespiteSimilar = async () => {
-    if (!pendingProductData) return;
-    setSaving(true);
-    try {
-      await createProduct(pendingProductData as { name: string; unit?: string; defaultPrice: number; description?: string });
-      setShowSimilarModal(false);
-      setSimilarProducts([]);
-      setPendingProductData(null);
       setShowModal(false);
-      await loadProducts();
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : "Failed to save product";
-      setFormError(message);
+      setEditingProduct(null);
+      setFormData({ name: "", unit: "", defaultPrice: "", description: "" });
+      fetchProducts();
+    } catch (err) {
+      console.error("Failed to save product", err);
     } finally {
       setSaving(false);
     }
   };
 
-  const handleSelectSimilar = (productId: string) => {
-    const product = products.find((p) => p.id === productId);
-    if (product) {
-      setEditingProduct(product);
-      setName(product.name);
-      const isCustom = product.unit && !PREDEFINED_UNITS.includes(product.unit);
-      setUnit(isCustom ? "custom" : (product.unit || ""));
-      setCustomUnit(isCustom ? (product.unit || "") : "");
-      setDefaultPrice(product.defaultPrice.toString());
-      setDescription(product.description || "");
-      setShowSimilarModal(false);
-      setSimilarProducts([]);
-      setPendingProductData(null);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!deletingProduct) return;
-    setSaving(true);
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this product?")) return;
+    
     try {
-      await deleteProduct(deletingProduct.id);
-      setShowDeleteModal(false);
-      setDeletingProduct(null);
-      await loadProducts();
-    } catch {
-      console.error("Failed to delete");
-    } finally {
-      setSaving(false);
+      await fetch(`/api/products/${id}`, { method: "DELETE" });
+      fetchProducts();
+    } catch (err) {
+      console.error("Failed to delete", err);
     }
   };
+
+  const openEdit = (product: Product) => {
+    setEditingProduct(product);
+    setFormData({ 
+      name: product.name, 
+      unit: product.unit || "", 
+      defaultPrice: product.defaultPrice.toString(), 
+      description: product.description || "" 
+    });
+    setShowModal(true);
+  };
+
+  const unitOptions = ["piece", "gram", "kg", "dozen", "pair", "set", "meter"];
 
   return (
     <div>
       <div className="page-header">
-        <div>
-          <h1 className="page-title">Products</h1>
-          <p className="page-subtitle">
-            Manage your product catalog ({products.length} items)
-          </p>
-        </div>
-        <div className="header-actions">
-          <button className="btn btn-primary" onClick={openCreateModal}>
-            <Plus size={18} />
-            Add Product
-          </button>
-        </div>
+        <h1 className="page-title">Products</h1>
       </div>
 
-      {/* Search */}
-      <div className="filter-bar" style={{ marginBottom: "1rem" }}>
-        <div className="filter-field">
-          <label className="input-label" htmlFor="product-search">
-            Search
-          </label>
-          <div className="search-container full-width">
-            <Search size={16} className="search-icon" />
-            <input
-              id="product-search"
-              className="input"
-              placeholder="Search products..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+      {/* Search & Add */}
+      <div className="flex gap-2 mb-4">
+        <div className="search-box">
+          <Search size={18} className="search-icon" />
+          <input
+            type="text"
+            className="form-input search-input"
+            placeholder="Search products..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
+        <button className="btn btn-primary" onClick={() => { setEditingProduct(null); setFormData({ name: "", unit: "", defaultPrice: "", description: "" }); setShowModal(true); }}>
+          <Plus size={18} />
+        </button>
       </div>
 
-      {/* Table */}
+      {/* Product List */}
       {loading ? (
-        <div className="card" style={{ textAlign: "center", padding: "3rem" }}>
-          <div className="spinner" style={{ margin: "0 auto", borderTopColor: "var(--primary)" }} />
-          <p style={{ marginTop: "1rem", color: "var(--text-muted)" }}>Loading products...</p>
-        </div>
+        <div className="loading">Loading...</div>
       ) : filteredProducts.length === 0 ? (
-        <div className="card empty-state">
-          <div className="empty-icon">
-            <Package size={28} />
-          </div>
-          <div className="empty-title">
-            {search ? "No products found" : "No products yet"}
-          </div>
-          <div className="empty-description">
-            {search
-              ? "Try a different search term"
-              : "Add products to your catalog or they'll be created automatically during invoicing"}
-          </div>
-          {!search && (
-            <button
-              className="btn btn-primary"
-              style={{ marginTop: "1rem" }}
-              onClick={openCreateModal}
-            >
-              <Plus size={16} />
-              Add Product
-            </button>
-          )}
+        <div className="empty-state">
+          <Package size={48} />
+          <p className="empty-title">No products found</p>
         </div>
       ) : (
-        <div className="table-container table-stack">
-          <table className="table-stack">
-            <thead>
-              <tr>
-                <th>Product Name</th>
-                <th>Unit</th>
-                <th>Default Price</th>
-                <th>Description</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProducts.map((product) => (
-                <tr key={product.id}>
-                  <td data-label="Product Name" style={{ fontWeight: 500 }}>{product.name}</td>
-                  <td data-label="Unit">{product.unit || "—"}</td>
-                  <td data-label="Default Price">
-                    <span className="badge badge-gold">
-                      {formatCurrency(product.defaultPrice)}
-                    </span>
-                  </td>
-                  <td
-                    data-label="Description"
-                    style={{
-                      color: "var(--text-muted)",
-                      maxWidth: "250px",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {product.description || "—"}
-                  </td>
-                  <td data-label="Actions">
-                    <div className="table-actions">
-                      <button
-                        className="btn btn-ghost btn-icon"
-                        onClick={() => openEditModal(product)}
-                        title="Edit"
-                      >
-                        <Edit2 size={16} />
-                      </button>
-                      <button
-                        className="btn btn-ghost btn-icon"
-                        onClick={() => {
-                          setDeletingProduct(product);
-                          setShowDeleteModal(true);
-                        }}
-                        title="Delete"
-                        style={{ color: "var(--danger)" }}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="card">
+          {filteredProducts.map((product) => (
+            <div key={product.id} className="product-item">
+              <div className="product-info">
+                <div className="product-name">{product.name}</div>
+                <div className="product-details">
+                  {product.unit && <span className="product-unit">{product.unit}</span>}
+                  <span className="product-price">₹{product.defaultPrice.toLocaleString()}</span>
+                </div>
+              </div>
+              <div className="product-actions">
+                <button className="icon-btn ghost" onClick={() => openEdit(product)}>
+                  <Edit size={18} />
+                </button>
+                <button className="icon-btn ghost danger" onClick={() => handleDelete(product.id)}>
+                  <Trash2 size={18} />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Create/Edit Modal */}
+      {/* Modal */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 className="modal-title">
-                {editingProduct ? "Edit Product" : "Add Product"}
-              </h2>
-              <button
-                className="btn btn-ghost btn-icon"
-                onClick={() => setShowModal(false)}
-              >
-                <X size={18} />
+              <h2>{editingProduct ? "Edit Product" : "Add Product"}</h2>
+              <button className="icon-btn" onClick={() => setShowModal(false)}>
+                <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit}>
-              {formError && (
-                <div
-                  style={{
-                    background: "rgba(239, 68, 68, 0.1)",
-                    border: "1px solid rgba(239, 68, 68, 0.2)",
-                    borderRadius: "var(--radius-md)",
-                    padding: "0.75rem",
-                    color: "var(--danger)",
-                    fontSize: "0.875rem",
-                    marginBottom: "1rem",
-                  }}
-                >
-                  {formError}
-                </div>
-              )}
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                <div className="input-group">
-                  <label className="input-label" htmlFor="product-name">
-                    Product Name *
-                  </label>
-                  <input
-                    id="product-name"
-                    className="input"
-                    placeholder="e.g., Gold Chain 22K"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    autoFocus
-                  />
-                </div>
-
-                <div className="input-group">
-                  <label className="input-label" htmlFor="product-unit">
-                    Unit
-                  </label>
-                  <div style={{ display: "flex", gap: "0.5rem" }}>
-                    <select
-                      id="product-unit"
-                      className="input"
-                      value={unit}
-                      onChange={(e) => {
-                        setUnit(e.target.value);
-                        if (e.target.value !== "custom") setCustomUnit("");
-                      }}
-                      style={{ flex: 1 }}
-                    >
-                      <option value="">Select unit</option>
-                      {PREDEFINED_UNITS.map((u) => (
-                        <option key={u} value={u}>{u}</option>
-                      ))}
-                      <option value="custom">Other (custom)</option>
-                    </select>
-                    {unit === "custom" && (
-                      <input
-                        className="input"
-                        placeholder="Enter unit"
-                        value={customUnit}
-                        onChange={(e) => setCustomUnit(e.target.value)}
-                        style={{ flex: 1 }}
-                        required
-                      />
-                    )}
-                  </div>
-                </div>
-
-                <div className="input-group">
-                  <label className="input-label" htmlFor="product-price">
-                    Default Price (₹)
-                  </label>
-                  <input
-                    id="product-price"
-                    type="number"
-                    className="input"
-                    placeholder="0.00"
-                    value={defaultPrice}
-                    onChange={(e) => setDefaultPrice(e.target.value)}
-                    step="0.01"
-                    min="0"
-                  />
-                </div>
-
-                <div className="input-group">
-                  <label className="input-label" htmlFor="product-desc">
-                    Description
-                  </label>
-                  <textarea
-                    id="product-desc"
-                    className="input"
-                    placeholder="Optional description..."
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    rows={3}
-                  />
-                </div>
+            {/* Similar Products Warning */}
+            {similarProducts.length > 0 && (
+              <div className="similar-warning">
+                <AlertTriangle size={18} />
+                <span>Similar products exist: {similarProducts.map(p => p.name).join(", ")}</span>
               </div>
+            )}
 
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowModal(false)}
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label className="form-label">Name *</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Unit</label>
+                <select
+                  className="form-input"
+                  value={formData.unit}
+                  onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                 >
+                  <option value="">Select unit</option>
+                  {unitOptions.map(u => <option key={u} value={u}>{u}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Default Price</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  value={formData.defaultPrice}
+                  onChange={(e) => setFormData({ ...formData, defaultPrice: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Description</label>
+                <textarea
+                  className="form-input"
+                  rows={2}
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={saving}
-                >
-                  {saving ? (
-                    <div className="spinner" />
-                  ) : editingProduct ? (
-                    "Update"
-                  ) : (
-                    "Add Product"
-                  )}
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? "Saving..." : "Save"}
                 </button>
               </div>
             </form>
@@ -464,120 +235,30 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {/* Similar Products Warning */}
-      {showSimilarModal && (
-        <div className="modal-overlay" onClick={() => setShowSimilarModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 className="modal-title">Similar Products Found</h2>
-              <button
-                className="btn btn-ghost btn-icon"
-                onClick={() => setShowSimilarModal(false)}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.75rem",
-                background: "rgba(184, 134, 11, 0.1)",
-                border: "1px solid rgba(184, 134, 11, 0.2)",
-                borderRadius: "var(--radius-md)",
-                padding: "0.75rem",
-                marginBottom: "1rem",
-              }}
-            >
-              <AlertCircle size={20} style={{ color: "var(--primary-light)" }} />
-              <span style={{ color: "var(--text-primary)", fontSize: "0.875rem" }}>
-                We found similar products in your catalog:
-              </span>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              {similarProducts.map((product) => (
-                <div
-                  key={product.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "0.75rem",
-                    background: "var(--bg-secondary)",
-                    borderRadius: "var(--radius-md)",
-                  }}
-                >
-                  <div>
-                    <div style={{ fontWeight: 500 }}>{product.name}</div>
-                    <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                      {product.similarity}% match
-                    </div>
-                  </div>
-                  <button
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => handleSelectSimilar(product.id)}
-                  >
-                    Use This
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <div className="modal-footer" style={{ marginTop: "1.5rem" }}>
-              <button
-                className="btn btn-secondary"
-                onClick={() => setShowSimilarModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={handleAddDespiteSimilar}
-                disabled={saving}
-              >
-                {saving ? <div className="spinner" /> : "Add Anyway"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation */}
-      {showDeleteModal && deletingProduct && (
-        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
-          <div
-            className="modal-content confirm-dialog"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="confirm-icon">
-              <AlertTriangle size={28} />
-            </div>
-            <h3 className="confirm-title">Delete Product</h3>
-            <p className="confirm-text">
-              Are you sure you want to delete{" "}
-              <strong>{deletingProduct.name}</strong>? This action cannot be
-              undone.
-            </p>
-            <div className="confirm-actions">
-              <button
-                className="btn btn-secondary"
-                onClick={() => setShowDeleteModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn btn-danger"
-                onClick={handleDelete}
-                disabled={saving}
-              >
-                {saving ? <div className="spinner" /> : "Delete"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <style jsx>{`
+        .flex { display: flex; }
+        .gap-2 { gap: 8px; }
+        .mb-4 { margin-bottom: 16px; }
+        .search-box { flex: 1; position: relative; }
+        .search-input { padding-left: 40px; }
+        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+        .product-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border); }
+        .product-item:last-child { border-bottom: none; }
+        .product-name { font-weight: 600; font-size: 1rem; }
+        .product-details { display: flex; gap: 12px; margin-top: 4px; }
+        .product-unit { font-size: 0.8125rem; color: var(--text-muted); text-transform: capitalize; }
+        .product-price { font-size: 0.8125rem; color: var(--primary); font-weight: 600; }
+        .product-actions { display: flex; gap: 4px; }
+        .danger { color: var(--danger) !important; }
+        .loading { text-align: center; padding: 40px; color: var(--text-muted); }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 20px; }
+        .modal { background: var(--bg-card); border-radius: 16px; width: 100%; max-width: 400px; padding: 20px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .modal-header h2 { font-size: 1.25rem; font-weight: 600; }
+        .modal-actions { display: flex; gap: 12px; margin-top: 20px; }
+        .modal-actions .btn { flex: 1; }
+        .similar-warning { display: flex; align-items: center; gap: 8px; padding: 12px; background: rgba(202, 138, 4, 0.1); border-radius: 8px; font-size: 0.8125rem; color: var(--warning); margin-bottom: 16px; }
+      `}</style>
     </div>
   );
 }

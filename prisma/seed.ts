@@ -5,19 +5,26 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Seeding database...\n");
 
-  // Create admin user (passkey-based, no password)
-  const user = await prisma.user.upsert({
-    where: { email: "admin@ahuja.com" },
-    update: {},
-    create: {
-      email: "admin@ahuja.com",
-      name: "Ahuja Admin",
-    },
-  });
-  console.log("✅ Admin user created:", user.email);
+  // Create allowed users
+  const users = [
+    { email: "naveen.dengani@gmail.com", name: "Naveen Dangani" },
+    { email: "mayank.dengani25@gmail.com", name: "Mayank Dangani" },
+  ];
+
+  for (const u of users) {
+    const user = await prisma.user.upsert({
+      where: { email: u.email },
+      update: {},
+      create: {
+        email: u.email,
+        name: u.name,
+      },
+    });
+    console.log("✅ User created:", user.email);
+  }
 
   console.log("\n🎉 Seed completed!");
-  console.log("\n📧 Login: Use passkey authentication");
+  console.log("\n📧 Login: Use passkey authentication with email and password 'passkey-auth'");
 }
 
 main()

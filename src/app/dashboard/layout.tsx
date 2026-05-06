@@ -1,86 +1,33 @@
-"use client";
-
-import { useSession } from "next-auth/react";
-import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import Sidebar from "@/components/Sidebar";
+import prisma from "@/lib/db";
 
-function DashboardContent({ children }: { children: React.ReactNode }) {
-  const { data: session, status } = useSession();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  if (status === "loading") {
-    return (
-      <div style={{ 
-        display: "flex", 
-        alignItems: "center", 
-        justifyContent: "center", 
-        minHeight: "100vh",
-        color: "var(--text-muted)"
-      }}>
-        Loading...
-      </div>
-    );
-  }
-
-  if (!session) {
-    if (typeof window !== "undefined") {
-      window.location.href = "/login";
-    }
-    return null;
-  }
-
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
-  const closeSidebar = () => setSidebarOpen(false);
-
-  return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
-      <div
-        className={`sidebar-overlay ${sidebarOpen ? "visible" : ""}`}
-        onClick={closeSidebar}
-      />
-
-      <Sidebar
-        userName={session.user?.name || "User"}
-        isOpen={sidebarOpen}
-        onClose={closeSidebar}
-      />
-
-      <div className="mobile-header">
-        <div className="mobile-header-left">
-          <button 
-            className="mobile-menu-btn" 
-            onClick={toggleSidebar}
-            aria-label={sidebarOpen ? "Close menu" : "Open menu"}
-          >
-            {sidebarOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
-          <img 
-            src="/logo.png" 
-            alt="Ahuja Jewellers" 
-            style={{ 
-              width: 32, 
-              height: 32, 
-              borderRadius: "var(--radius-md)",
-              objectFit: "contain",
-              background: "white",
-              padding: 2,
-              flexShrink: 0
-            }} 
-          />
-          <span className="mobile-brand">Ahuja Jewellers</span>
-        </div>
-      </div>
-
-      <main className="main-content">{children}</main>
-    </div>
-  );
-}
-
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <DashboardContent>{children}</DashboardContent>;
+  const session = await auth();
+  
+  if (!session?.user?.email) {
+    redirect("/login");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    select: { name: true },
+  });
+
+  return (
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+      <div className="flex min-h-screen bg-[var(--bg-primary)]">
+        <Sidebar userName={user?.name || "User"} />
+        <main className="main-content flex-1">
+          {children}
+        </main>
+      </div>
+    </ThemeProvider>
+  );
 }

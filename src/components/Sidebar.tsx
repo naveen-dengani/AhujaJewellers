@@ -13,119 +13,133 @@ import {
   LogOut,
   Sun,
   Moon,
+  Menu,
+  X,
 } from "lucide-react";
+import { useState, useEffect } from "react";
 
-const navItems = [
-  {
-    section: "Overview",
-    items: [
-      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    ],
-  },
-  {
-    section: "Management",
-    items: [
-      { href: "/dashboard/customers", label: "Customers", icon: Users },
-      { href: "/dashboard/products", label: "Products", icon: Package },
-    ],
-  },
-  {
-    section: "Billing",
-    items: [
-      { href: "/dashboard/invoices", label: "Invoices", icon: FileText },
-      { href: "/dashboard/invoices/new", label: "New Invoice", icon: Plus },
-    ],
-  },
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ size?: number }>;
+}
+
+const navItems: NavItem[] = [
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Customers", href: "/dashboard/customers", icon: Users },
+  { name: "Invoices", href: "/dashboard/invoices", icon: FileText },
+  { name: "Products", href: "/dashboard/products", icon: Package },
 ];
 
-export default function Sidebar({ userName, isOpen, onClose }: { userName: string; isOpen?: boolean; onClose?: () => void }) {
+export default function Sidebar({ userName }: { userName?: string }) {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
+  const [isOpen, setIsOpen] = useState(false);
+  const [logoUrl, setLogoUrl] = useState("/logo.png");
+  const [isDesktop, setIsDesktop] = useState(false);
 
-  const handleNavClick = () => {
-    if (onClose) onClose();
-  };
+  useEffect(() => {
+    setLogoUrl(`${window.location.origin}/logo.png`);
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
 
   return (
-    <aside className={`sidebar ${isOpen ? "open" : ""}`}>
-      <div className="sidebar-header">
-        <img 
-          src="/logo.png" 
-          alt="Ahuja Jewellers" 
-          style={{ 
-            width: 36, 
-            height: 36, 
-            borderRadius: "var(--radius-md)",
-            objectFit: "contain",
-            background: "white",
-            padding: 4
-          }} 
-        />
-        <div>
-          <div className="sidebar-brand">Ahuja Jewellers</div>
-          <div className="sidebar-brand-sub">Billing System</div>
-        </div>
-      </div>
-
-      <nav className="sidebar-nav">
-        {navItems.map((section) => (
-          <div className="nav-section" key={section.section}>
-            <div className="nav-section-title">{section.section}</div>
-            {section.items.map((item) => {
-              const isActive =
-                item.href === "/dashboard"
-                  ? pathname === "/dashboard"
-                  : pathname.startsWith(item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`nav-link ${isActive ? "active" : ""}`}
-                  onClick={handleNavClick}
-                >
-                  <item.icon size={18} />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </div>
-        ))}
-      </nav>
-
-      <div className="sidebar-footer">
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
+    <>
+      {/* Mobile Header */}
+      <header className="mobile-header">
+        <button
+          className="icon-btn"
+          onClick={() => setIsOpen(true)}
+          aria-label="Open menu"
         >
-          <div>
-            <div style={{ fontSize: "0.875rem", fontWeight: 500 }}>
-              {userName}
-            </div>
-            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-              Admin
+          <Menu size={24} />
+        </button>
+        <Link href="/dashboard" className="mobile-brand">
+          <img src={logoUrl} alt="Ahuja" className="logo-img" />
+        </Link>
+        <Link 
+          href="/dashboard/invoices/new" 
+          className="icon-btn primary"
+          aria-label="New invoice"
+        >
+          <Plus size={22} />
+        </Link>
+      </header>
+
+      {/* Overlay - only on mobile */}
+      {isOpen && !isDesktop && (
+        <div className="sidebar-overlay" onClick={() => setIsOpen(false)} />
+      )}
+
+      {/* Sidebar - Slide from left */}
+      <aside className={`sidebar ${isOpen ? "open" : ""}`}>
+        <div className="sidebar-header">
+          {!isDesktop && (
+            <button 
+              className="icon-btn"
+              onClick={() => setIsOpen(false)}
+            >
+              <X size={20} />
+            </button>
+          )}
+          <div className="brand">
+            <img src={logoUrl} alt="Ahuja" className="logo-img" />
+            <div className="brand-text">
+              <span className="brand-name">Ahuja</span>
+              <span className="brand-sub">Jewellers</span>
             </div>
           </div>
-          <div style={{ display: "flex", gap: "0.25rem" }}>
+        </div>
+
+        <nav className="sidebar-nav">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href || 
+              (item.href !== "/dashboard" && pathname.startsWith(item.href));
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`nav-item ${isActive ? "active" : ""}`}
+                onClick={() => setIsOpen(false)}
+              >
+                <item.icon size={20} />
+                <span>{item.name}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="sidebar-footer">
+          <div className="user-info">
+            <div className="user-avatar">
+              {userName?.charAt(0)?.toUpperCase() || "U"}
+            </div>
+            <div className="user-details">
+              <span className="user-name">{userName}</span>
+              <span className="user-email">Admin</span>
+            </div>
+          </div>
+          <div className="user-actions">
             <button
               onClick={toggleTheme}
-              className="btn btn-ghost btn-icon"
-              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              className="icon-btn ghost"
+              title={theme === "dark" ? "Light mode" : "Dark mode"}
             >
               {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
             </button>
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="btn btn-ghost btn-icon"
-              title="Sign out"
+              className="icon-btn ghost"
+              title="Logout"
             >
               <LogOut size={18} />
             </button>
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }
